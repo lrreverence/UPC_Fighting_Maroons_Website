@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +32,7 @@ const AthletesList = () => {
       
       if (error) throw error;
       
+      console.log('Fetched athletes:', data);
       setAthletes(data || []);
     } catch (error) {
       console.error("Error fetching athletes:", error);
@@ -54,13 +54,40 @@ const AthletesList = () => {
     if (!confirm("Are you sure you want to delete this athlete?")) return;
 
     try {
-      const { error } = await supabase
+      console.log('Attempting to delete athlete with ID:', id);
+      
+      // First verify the athlete exists
+      const { data: existingAthlete, error: fetchError } = await supabase
+        .from('athletes')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error fetching athlete:', fetchError);
+        throw fetchError;
+      }
+      
+      if (!existingAthlete) {
+        throw new Error('Athlete not found');
+      }
+      
+      console.log('Found athlete to delete:', existingAthlete);
+      
+      // Perform the deletion
+      const { error: deleteError } = await supabase
         .from('athletes')
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
+      if (deleteError) {
+        console.error('Error deleting athlete:', deleteError);
+        throw deleteError;
+      }
       
+      console.log('Successfully deleted athlete from Supabase');
+      
+      // Update local state
       setAthletes(athletes.filter(athlete => athlete.id !== id));
       
       toast({
@@ -68,10 +95,10 @@ const AthletesList = () => {
         description: "Athlete deleted successfully.",
       });
     } catch (error) {
-      console.error("Error deleting athlete:", error);
+      console.error("Error in delete process:", error);
       toast({
         title: "Error",
-        description: "Failed to delete athlete.",
+        description: "Failed to delete athlete. Please try again.",
         variant: "destructive",
       });
     }

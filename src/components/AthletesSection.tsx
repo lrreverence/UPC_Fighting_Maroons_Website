@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Activity as ActivityIcon } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -40,44 +39,32 @@ const AthletesSection = () => {
     fetchAthletes();
   }, []);
 
-  // Fallback data if no athletes in database yet
-  const fallbackAthletes = [
-    {
-      id: "1",
-      name: "Marco Cruz",
-      sport: "Basketball",
-      course: "BS Computer Science",
-      image_url: "https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&q=80&w=600",
-      achievements: "MVP 2023, All-Star 2022"
-    },
-    {
-      id: "2",
-      name: "Sofia Reyes",
-      sport: "Volleyball",
-      course: "BS Biology",
-      image_url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=600",
-      achievements: "Best Setter 2023"
-    },
-    {
-      id: "3",
-      name: "Daniel Santos",
-      sport: "Swimming",
-      course: "BS Business Administration",
-      image_url: "https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?auto=format&fit=crop&q=80&w=600",
-      achievements: "Gold Medalist 100m Freestyle"
-    },
-    {
-      id: "4",
-      name: "Maya Lim",
-      sport: "Track and Field",
-      course: "BS Architecture",
-      image_url: "https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?auto=format&fit=crop&q=80&w=600",
-      achievements: "Silver Medalist 400m"
-    }
-  ];
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="text-center">
+          <div className="h-8 w-8 border-4 border-maroon border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading athletes...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Use fallback data if no athletes found
-  const displayAthletes = athletes.length > 0 ? athletes : fallbackAthletes;
+  if (athletes.length === 0) {
+    return (
+      <section id="athletes" className="py-16 bg-gray-50">
+        <div className="container mx-auto px-6">
+          <div className="flex items-center gap-3 mb-10">
+            <ActivityIcon className="h-8 w-8 text-maroon" />
+            <h2 className="text-3xl font-bold text-maroon">Featured Athletes</h2>
+          </div>
+          <div className="text-center py-12">
+            <p className="text-lg text-gray-600">No athletes found. Add your first athlete!</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="athletes" className="py-16 bg-gray-50">
@@ -88,7 +75,7 @@ const AthletesSection = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {displayAthletes.map((athlete) => (
+          {athletes.map((athlete) => (
             <Card key={athlete.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="h-64 overflow-hidden">
                 <img 
@@ -105,9 +92,11 @@ const AthletesSection = () => {
                   </span>
                   <span className="text-sm text-gray-600">{athlete.course}</span>
                 </div>
-                <p className="mt-3 text-sm text-gray-700">
-                  <span className="font-medium">Achievements:</span> {athlete.achievements}
-                </p>
+                {athlete.achievements && (
+                  <p className="mt-3 text-sm text-gray-700">
+                    <span className="font-medium">Achievements:</span> {athlete.achievements}
+                  </p>
+                )}
               </CardContent>
             </Card>
           ))}
