@@ -11,7 +11,7 @@ const Footer = () => {
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-10 h-10 flex items-center justify-center">
                   <img 
-                    src="/lovable-uploads/29b19ee1-3d5a-4c33-847d-777900e20bfc.png" 
+                    src="/uploads/29b19ee1-3d5a-4c33-847d-777900e20bfc.png" 
                     alt="Fighting Maroons Logo" 
                     className="w-full h-full object-contain"
                   />

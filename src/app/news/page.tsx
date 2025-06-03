@@ -109,7 +109,7 @@ export default function NewsPage() {
             excerpt: data.excerpt,
             category: data.category,
             date: formattedDate,
-            image: '/lovable-uploads/29b19ee1-3d5a-4c33-847d-777900e20bfc.png' // Using default image
+            image: '/uploads/29b19ee1-3d5a-4c33-847d-777900e20bfc.png' // Using default image
           }
         ]);
       

@@ -1,0 +1,37 @@
+Maroons Type Family
+
+About
+
+Maroons is the official type family of the UP Fighting Maroons. It was first developed in 2015 during the rebranding of the University of the Philippines’ collegiate varsity program.
+
+Aggressive and athletic, Maroons is inspired by constructivist and activist aesthetics rooted in the university’s proud history of igniting socio-political action. Its forms are angular, sharp, and unyielding—a bold distinction from the typical serif and blackletter typefaces used by rival academic institutions in the Philippines.
+
+The hero type, Maroons Sharp, was originally created by UP alumnus and designer AJ Dimarucot. Its cutting and unforgiving form is denoted by spearpoints cut in perfect, 45-degree diagonals.
+
+From its origins as the custom typeface used in the “Unibersidad ng Pilipinas” lockup (which debuted in the 78th season of the UAAP), Maroons Sharp has since been completed and refined with the addition of glyphs and tweaks concerning its readability and uniformity. It bears the players’ names and numbers on their jerseys and also appears on official apparel and merchandise.
+
+Maroons Strong introduces heft and stability to the type family. Its primary use is in the UP Fighting Maroons logo. As a font reliable for its legibility, it can convey bigger and longer messages than the narrower Maroons Sharp, therefore making it a suitable font of choice for banners, posters, and ads.
+
+The tertiary typeface in the family is Maroons Wide. Stout but lean, it emerged from a need to brand uniforms that couldn’t accommodate longer lockups. It was first seen in the women’s volleyball team as the “UP” mark emblazoned on their bikini tops and then later used in the home jerseys for the men’s basketball team. Outside official apparel, Maroons Wide works best with short headlines and large-scale applications.
+
+Designers
+
+AJ Dimarucot
+Joanna Malinis of Plus63 Design Co.
+Dan Matutina of Plus63 Design Co.
+
+License
+
+Free to use on non-commercial projects. Students, employees, faculty members, and alumni of The University of the Philippines can use the type free-of-charge for UAAP and university-related activities.
+
+For commercial licensing, please email hi@plus63.com. Proceeds from commercial licenses will go towards funding for the UP Fighting Maroons sports teams.
+
+Do not embed on apps, web apps, or websites. Use of the CSS rule @font-face or other forms of font linking are strictly prohibited under this license.
+
+
+Do not redistribute, repackage, or alter the font.
+
+Copyright
+
+Copyright is owned by the designers of the Maroons type family.
+
