@@ -24,6 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import ImageUpload from "./ImageUpload";
 
 type Team = {
+  team_id: string;
   team_name: string;
   sport: string;
   coach_name: string;
@@ -33,8 +34,7 @@ const AddAthleteForm = () => {
   const [open, setOpen] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState("");
-  const [formData, setFormData] = useState({
+  const [selectedImageUrl, setSelectedImageUrl] = useState("");  const [formData, setFormData] = useState({
     student_id: "",
     fname: "",
     mname: "",
@@ -47,10 +47,8 @@ const AddAthleteForm = () => {
     course: "",
     year_level: "",
     block: "",
-    team_name: "",
-  });
-
-  const fetchTeams = async () => {
+    team_id: "",
+  });  const fetchTeams = async () => {
     try {
       const { data, error } = await supabase
         .from('team')
@@ -98,13 +96,12 @@ const AddAthleteForm = () => {
         lname: formData.lname,
         birthdate: formData.birthdate || null,
         hometown: formData.hometown || null,
-        email: formData.email || null,
-        phone_number: formData.phone_number || null,
+        email: formData.email || null,        phone_number: formData.phone_number || null,
         department: formData.department || null,
         course: formData.course || null,
         year_level: formData.year_level ? parseInt(formData.year_level) : null,
         block: formData.block || null,
-        team_name: formData.team_name || null,
+        team_id: formData.team_id || null,
         image_url: selectedImageUrl || null,
       };
 
@@ -118,8 +115,7 @@ const AddAthleteForm = () => {
         title: "Success",
         description: "Athlete added successfully.",
       });
-      
-      // Reset form
+        // Reset form
       setFormData({
         student_id: "",
         fname: "",
@@ -133,7 +129,7 @@ const AddAthleteForm = () => {
         course: "",
         year_level: "",
         block: "",
-        team_name: "",
+        team_id: "",
       });
       setSelectedImageUrl("");
       setOpen(false);
@@ -199,16 +195,15 @@ const AddAthleteForm = () => {
                 onChange={(e) => handleInputChange("student_id", e.target.value)}
                 required
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="team_name">Team</Label>
-              <Select value={formData.team_name} onValueChange={(value) => handleInputChange("team_name", value)}>
+            </div>            <div className="space-y-2">
+              <Label htmlFor="team_id">Team</Label>
+              <Select value={formData.team_id} onValueChange={(value) => handleInputChange("team_id", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a team" />
                 </SelectTrigger>
                 <SelectContent>
                   {teams.map((team) => (
-                    <SelectItem key={team.team_name} value={team.team_name}>
+                    <SelectItem key={team.team_id} value={team.team_id}>
                       {team.team_name}
                     </SelectItem>
                   ))}

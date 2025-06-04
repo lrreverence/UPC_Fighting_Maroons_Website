@@ -17,8 +17,7 @@ const AllAthletes = () => {
               <div className="flex items-center gap-3">
                 <ActivityIcon className="h-8 w-8 text-maroon" />
                 <h1 className="text-3xl font-bold text-maroon">All Athletes</h1>
-              </div>
-              <div className="flex gap-4">
+              </div>              <div className="flex gap-4">
                 <AddAthleteForm />
                 <Button asChild variant="outline" className="border-maroon text-maroon hover:bg-maroon hover:text-white">
                   <Link to="/">Back to Home</Link>

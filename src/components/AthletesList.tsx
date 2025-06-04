@@ -38,7 +38,8 @@ type Athlete = {
   course?: string;
   year_level?: number;
   block?: string;
-  team_name?: string;
+  team_id?: string;
+  team_name?: string; // Keep for display purposes
   image_url?: string;
 };
 
@@ -49,7 +50,8 @@ type MatchHistory = {
   location?: string;
   game_status?: string;
   opponent_team?: string;
-  team_name?: string;
+  team_id?: string;
+  team_name?: string; // Keep for display purposes
   stat_description?: string;
 };
 
@@ -61,7 +63,7 @@ type Filters = {
   department: string;
   year_level: string;
   block: string;
-  team_name: string;
+  team_id: string;
   hometown: string;
 };
 
@@ -74,15 +76,14 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
   const [filteredAthletes, setFilteredAthletes] = useState<Athlete[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  
   // Filter states
   const [filters, setFilters] = useState<Filters>({
-    course: "",
-    department: "",
-    year_level: "",
-    block: "",
-    team_name: "",
-    hometown: ""
+    course: "all",
+    department: "all",
+    year_level: "all",
+    block: "all",
+    team_id: "all",
+    hometown: "all"
   });
   const [showFilters, setShowFilters] = useState(false);
   
@@ -97,7 +98,6 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
   const [filterOption, setFilterOption] = useState<FilterOption>("all");
   const [editingStatId, setEditingStatId] = useState<string | null>(null);
   const [editingStatDescription, setEditingStatDescription] = useState("");
-
   // Get unique filter options
   const getUniqueOptions = (field: keyof Athlete) => {
     const options = athletes
@@ -107,18 +107,40 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
     return options as string[];
   };
 
+  // Get unique team options with both id and name
+  const getUniqueTeamOptions = () => {
+    const teams = athletes
+      .filter(athlete => athlete.team_id && athlete.team_name)
+      .map(athlete => ({ team_id: athlete.team_id!, team_name: athlete.team_name! }))
+      .filter((team, index, self) => 
+        self.findIndex(t => t.team_id === team.team_id) === index
+      )
+      .sort((a, b) => a.team_name.localeCompare(b.team_name));
+    return teams;
+  };
   const fetchAthletes = async () => {
     try {
       setLoading(true);
       
       const { data, error } = await supabase
         .from('athlete')
-        .select('*')
+        .select(`
+          *,
+          team:team_id (
+            team_name
+          )
+        `)
         .order('lname');
       
       if (error) throw error;
       
-      setAthletes(data || []);
+      // Transform data to include team_name
+      const transformedData = data?.map((athlete: any) => ({
+        ...athlete,
+        team_name: athlete.team?.team_name
+      })) || [];
+      
+      setAthletes(transformedData);
     } catch (error) {
       console.error("Error fetching athletes:", error);
       toast({
@@ -138,30 +160,26 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
       const searchMatch = searchTerm === "" || 
         fullName.includes(searchTerm.toLowerCase()) ||
         athlete.team_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        athlete.student_id.toString().includes(searchTerm);
-
-      // Individual filters
-      const courseMatch = !filters.course || athlete.course === filters.course;
-      const departmentMatch = !filters.department || athlete.department === filters.department;
-      const yearLevelMatch = !filters.year_level || athlete.year_level?.toString() === filters.year_level;
-      const blockMatch = !filters.block || athlete.block === filters.block;
-      const teamMatch = !filters.team_name || athlete.team_name === filters.team_name;
-      const hometownMatch = !filters.hometown || athlete.hometown === filters.hometown;
+        athlete.student_id.toString().includes(searchTerm);      // Individual filters
+      const courseMatch = filters.course === "all" || athlete.course === filters.course;
+      const departmentMatch = filters.department === "all" || athlete.department === filters.department;
+      const yearLevelMatch = filters.year_level === "all" || athlete.year_level?.toString() === filters.year_level;
+      const blockMatch = filters.block === "all" || athlete.block === filters.block;
+      const teamMatch = filters.team_id === "all" || athlete.team_id === filters.team_id;
+      const hometownMatch = filters.hometown === "all" || athlete.hometown === filters.hometown;
 
       return searchMatch && courseMatch && departmentMatch && yearLevelMatch && blockMatch && teamMatch && hometownMatch;
     });
 
     setFilteredAthletes(filtered);
-  };
-
-  const clearFilters = () => {
+  };  const clearFilters = () => {
     setFilters({
-      course: "",
-      department: "",
-      year_level: "",
-      block: "",
-      team_name: "",
-      hometown: ""
+      course: "all",
+      department: "all",
+      year_level: "all",
+      block: "all",
+      team_id: "all",
+      hometown: "all"
     });
     setSearchTerm("");
   };
@@ -192,8 +210,7 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
   const fetchMatchHistory = async (studentId: number) => {
     try {
       setLoadingHistory(true);
-      
-      // Join game_participation with game table to get match details
+        // Join game_participation with game table to get match details
       const { data, error } = await supabase
         .from('game_participation')
         .select(`
@@ -205,14 +222,16 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
             location,
             game_status,
             opponent_team,
-            team_name
+            team_id,
+            team:team_id (
+              team_name
+            )
           )
         `)
         .eq('student_id', studentId);
       
       if (error) throw error;
-      
-      // Transform the data to match our MatchHistory type
+        // Transform the data to match our MatchHistory type
       const transformedData: MatchHistory[] = data?.map((item: any) => ({
         game_id: item.game_id,
         game_date: item.game?.game_date || '',
@@ -220,7 +239,8 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
         location: item.game?.location,
         game_status: item.game?.game_status,
         opponent_team: item.game?.opponent_team,
-        team_name: item.game?.team_name,
+        team_id: item.game?.team_id,
+        team_name: item.game?.team?.team_name,
         stat_description: item.stat_description
       })) || [];
       
@@ -646,9 +666,8 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
                 <Select value={filters.course} onValueChange={(value) => setFilters({...filters, course: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="All courses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All courses</SelectItem>
+                  </SelectTrigger>                  <SelectContent>
+                    <SelectItem value="all">All courses</SelectItem>
                     {getUniqueOptions('course').map((course) => (
                       <SelectItem key={course} value={course}>{course}</SelectItem>
                     ))}
@@ -661,9 +680,8 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
                 <Select value={filters.department} onValueChange={(value) => setFilters({...filters, department: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="All departments" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All departments</SelectItem>
+                  </SelectTrigger>                  <SelectContent>
+                    <SelectItem value="all">All departments</SelectItem>
                     {getUniqueOptions('department').map((department) => (
                       <SelectItem key={department} value={department}>{department}</SelectItem>
                     ))}
@@ -676,9 +694,8 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
                 <Select value={filters.year_level} onValueChange={(value) => setFilters({...filters, year_level: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="All years" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All years</SelectItem>
+                  </SelectTrigger>                  <SelectContent>
+                    <SelectItem value="all">All years</SelectItem>
                     {getUniqueOptions('year_level').map((year) => (
                       <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                     ))}
@@ -691,26 +708,22 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
                 <Select value={filters.block} onValueChange={(value) => setFilters({...filters, block: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="All blocks" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All blocks</SelectItem>
+                  </SelectTrigger>                  <SelectContent>
+                    <SelectItem value="all">All blocks</SelectItem>
                     {getUniqueOptions('block').map((block) => (
                       <SelectItem key={block} value={block}>{block}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div>
+              </div>              <div>
                 <Label htmlFor="team-filter">Team</Label>
-                <Select value={filters.team_name} onValueChange={(value) => setFilters({...filters, team_name: value})}>
+                <Select value={filters.team_id} onValueChange={(value) => setFilters({...filters, team_id: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="All teams" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All teams</SelectItem>
-                    {getUniqueOptions('team_name').map((team) => (
-                      <SelectItem key={team} value={team}>{team}</SelectItem>
+                  </SelectTrigger>                  <SelectContent>
+                    <SelectItem value="all">All teams</SelectItem>
+                    {getUniqueTeamOptions().map((team) => (
+                      <SelectItem key={team.team_id} value={team.team_id}>{team.team_name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -721,9 +734,8 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
                 <Select value={filters.hometown} onValueChange={(value) => setFilters({...filters, hometown: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="All hometowns" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All hometowns</SelectItem>
+                  </SelectTrigger>                  <SelectContent>
+                    <SelectItem value="all">All hometowns</SelectItem>
                     {getUniqueOptions('hometown').map((hometown) => (
                       <SelectItem key={hometown} value={hometown}>{hometown}</SelectItem>
                     ))}
@@ -750,7 +762,7 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
       {filteredAthletes.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600">
-            {searchTerm || Object.values(filters).some(f => f) ? "No athletes found matching your criteria." : "No athletes found."}
+            {searchTerm || Object.values(filters).some(f => f !== "all") ? "No athletes found matching your criteria." : "No athletes found."}
           </p>
         </div>
       ) : (

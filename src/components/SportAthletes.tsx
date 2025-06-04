@@ -19,11 +19,13 @@ type Athlete = {
   course?: string;
   year_level?: number;
   block?: string;
-  team_name?: string;
+  team_id?: string;
+  team_name?: string; // Keep for display purposes
   image_url?: string;
 };
 
 type Team = {
+  team_id: string;
   team_name: string;
   sport: string;
   coach_name: string;
@@ -65,21 +67,31 @@ const SportAthletes = () => {
       if (teamsError) throw teamsError;
       
       setTeams(teamsData || []);
-      
-      if (teamsData && teamsData.length > 0) {
-        // Get team names for this sport
-        const teamNames = teamsData.map((team: Team) => team.team_name);
+        if (teamsData && teamsData.length > 0) {
+        // Get team IDs for this sport
+        const teamIds = teamsData.map((team: Team) => team.team_id);
         
-        // Then, get athletes for these teams
+        // Then, get athletes for these teams with team names
         const { data: athletesData, error: athletesError } = await (supabase as any)
           .from('athlete')
-          .select('*')
-          .in('team_name', teamNames)
+          .select(`
+            *,
+            team:team_id (
+              team_name
+            )
+          `)
+          .in('team_id', teamIds)
           .order('lname');
         
         if (athletesError) throw athletesError;
         
-        setAthletes(athletesData || []);
+        // Transform data to include team_name
+        const transformedAthletes = athletesData?.map((athlete: any) => ({
+          ...athlete,
+          team_name: athlete.team?.team_name
+        })) || [];
+        
+        setAthletes(transformedAthletes);
       } else {
         setAthletes([]);
       }

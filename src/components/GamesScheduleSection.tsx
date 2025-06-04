@@ -14,26 +14,37 @@ type Game = {
   end_time?: string;
   location?: string;
   game_status?: string;
-  team_name?: string;
+  team_id?: string;
+  team_name?: string; // For display purposes
   opponent_team?: string;
 };
 
 const GamesScheduleSection = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
-
   const fetchGames = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('game')
-        .select('*')
+        .select(`
+          *,
+          team:team_id (
+            team_name
+          )
+        `)
         .order('game_date')
         .limit(6);
       
       if (error) throw error;
       
-      setGames(data as Game[]);
+      // Transform data to include team_name
+      const transformedGames = data?.map((game: any) => ({
+        ...game,
+        team_name: game.team?.team_name
+      })) || [];
+      
+      setGames(transformedGames);
     } catch (error) {
       console.error("Error fetching games:", error);
       toast({

@@ -46,7 +46,8 @@ interface Game {
   end_time?: string;
   location?: string;
   game_status?: string;
-  team_name?: string;
+  team_id?: string;
+  team_name?: string; // Keep for display purposes
   opponent_team?: string;
 }
 
@@ -57,11 +58,12 @@ interface GameFormValues {
   end_time: string;
   location: string;
   game_status: string;
-  team_name: string;
+  team_id: string;
   opponent_team: string;
 }
 
 interface Team {
+  team_id: string;
   team_name: string;
   sport: string;
 }
@@ -72,7 +74,6 @@ const FullSchedule = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
-
   const form = useForm<GameFormValues>({
     defaultValues: {
       game_id: "",
@@ -81,16 +82,15 @@ const FullSchedule = () => {
       end_time: "",
       location: "",
       game_status: "Scheduled",
-      team_name: "",
+      team_id: "",
       opponent_team: "",
     },
   });
-
   const fetchTeams = async () => {
     try {
       const { data, error } = await supabase
         .from("team")
-        .select("team_name, sport")
+        .select("team_id, team_name, sport")
         .order("team_name");
 
       if (error) throw error;
@@ -99,17 +99,28 @@ const FullSchedule = () => {
       console.error("Error fetching teams:", error);
     }
   };
-
   const fetchGames = async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
         .from("game")
-        .select("*")
+        .select(`
+          *,
+          team:team_id (
+            team_name
+          )
+        `)
         .order("game_date");
 
       if (error) throw error;
-      setGames(data as Game[]);
+      
+      // Transform data to include team_name
+      const transformedGames = data?.map((game: any) => ({
+        ...game,
+        team_name: game.team?.team_name
+      })) || [];
+      
+      setGames(transformedGames);
     } catch (error) {
       console.error("Error fetching games:", error);
       toast({
@@ -126,7 +137,6 @@ const FullSchedule = () => {
     fetchTeams();
     fetchGames();
   }, []);
-
   const handleAddGame = async (values: GameFormValues) => {
     try {
       const { error } = await supabase.from("game").insert([{
@@ -136,7 +146,7 @@ const FullSchedule = () => {
         end_time: values.end_time || null,
         location: values.location || null,
         game_status: values.game_status || 'Scheduled',
-        team_name: values.team_name || null,
+        team_id: values.team_id || null,
         opponent_team: values.opponent_team || null,
       }]);
 
@@ -233,10 +243,9 @@ const FullSchedule = () => {
                           <FormMessage />
                         </FormItem>
                       )}
-                    />
-                    <FormField
+                    />                    <FormField
                       control={form.control}
-                      name="team_name"
+                      name="team_id"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Team</FormLabel>
@@ -248,7 +257,7 @@ const FullSchedule = () => {
                             </FormControl>
                             <SelectContent>
                               {teams.map((team) => (
-                                <SelectItem key={team.team_name} value={team.team_name}>
+                                <SelectItem key={team.team_id} value={team.team_id}>
                                   {team.team_name}
                                 </SelectItem>
                               ))}
@@ -325,8 +334,7 @@ const FullSchedule = () => {
                             <FormMessage />
                           </FormItem>
                         )}
-                      />
-                    </div>
+                      />                    </div>
                     <FormField
                       control={form.control}
                       name="game_status"

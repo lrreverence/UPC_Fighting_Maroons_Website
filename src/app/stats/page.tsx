@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/select";
 
 interface StatData {
-  team_name: string;
+  team_id: string;
+  team_name?: string; // Keep for display purposes
   top_performer?: string;
   wins?: number;
   losses?: number;
@@ -28,6 +29,7 @@ interface StatData {
 }
 
 interface Team {
+  team_id: string;
   team_name: string;
   sport: string;
 }
@@ -37,9 +39,8 @@ const StatsPage = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
-  const [newStat, setNewStat] = useState({
-    team_name: "",
+  const [open, setOpen] = useState(false);  const [newStat, setNewStat] = useState({
+    team_id: "",
     wins: undefined,
     losses: undefined,
     points: undefined,
@@ -49,12 +50,11 @@ const StatsPage = () => {
     top_performer: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const fetchTeams = async () => {
     try {
       const { data, error } = await supabase
         .from('team')
-        .select('team_name, sport')
+        .select('team_id, team_name, sport')
         .order('team_name');
 
       if (error) throw error;
@@ -63,17 +63,28 @@ const StatsPage = () => {
       console.error('Error fetching teams:', error);
     }
   };
-
   const fetchStats = async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('stats')
-        .select('*')
-        .order('team_name');
+        .select(`
+          *,
+          team:team_id (
+            team_name
+          )
+        `)
+        .order('team_id');
 
       if (error) throw error;
-      setStats(data as StatData[]);
+      
+      // Transform data to include team_name
+      const transformedStats = data?.map((stat: any) => ({
+        ...stat,
+        team_name: stat.team?.team_name
+      })) || [];
+      
+      setStats(transformedStats);
     } catch (error) {
       console.error('Error fetching stats:', error);
       toast({
@@ -92,9 +103,7 @@ const StatsPage = () => {
   }, []);
 
   const handleAddStat = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!newStat.team_name) {
+    e.preventDefault();    if (!newStat.team_id) {
       toast({
         title: "Error",
         description: "Team selection is required.",
@@ -106,7 +115,7 @@ const StatsPage = () => {
     setIsSubmitting(true);
     try {
       const statToSubmit = {
-        team_name: newStat.team_name,
+        team_id: newStat.team_id,
         wins: newStat.wins,
         losses: newStat.losses,
         points: newStat.points,
@@ -126,10 +135,8 @@ const StatsPage = () => {
       toast({
         title: "Success",
         description: "Stat added successfully.",
-      });
-
-      setNewStat({
-        team_name: "",
+      });      setNewStat({
+        team_id: "",
         wins: undefined,
         losses: undefined,
         points: undefined,
@@ -152,19 +159,18 @@ const StatsPage = () => {
       setIsSubmitting(false);
     }
   };
-
-  const handleDeleteStat = async (teamName: string) => {
+  const handleDeleteStat = async (teamId: string) => {
     if (!confirm("Are you sure you want to delete this stat?")) return;
 
     try {
       const { error } = await supabase
         .from('stats')
         .delete()
-        .eq('team_name', teamName);
+        .eq('team_id', teamId);
       
       if (error) throw error;
       
-      setStats(stats.filter(stat => stat.team_name !== teamName));
+      setStats(stats.filter(stat => stat.team_id !== teamId));
       
       toast({
         title: "Success",
@@ -198,16 +204,15 @@ const StatsPage = () => {
             <DialogHeader>
               <DialogTitle className="text-xl">Add New Statistic</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleAddStat} className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="team_name">Team</Label>
-                <Select value={newStat.team_name} onValueChange={(value) => setNewStat({ ...newStat, team_name: value })}>
+            <form onSubmit={handleAddStat} className="space-y-4">              <div className="grid gap-2">
+                <Label htmlFor="team_id">Team</Label>
+                <Select value={newStat.team_id} onValueChange={(value) => setNewStat({ ...newStat, team_id: value })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a team" />
                   </SelectTrigger>
                   <SelectContent>
                     {teams.map((team) => (
-                      <SelectItem key={team.team_name} value={team.team_name}>
+                      <SelectItem key={team.team_id} value={team.team_id}>
                         {team.team_name}
                       </SelectItem>
                     ))}
@@ -323,7 +328,7 @@ const StatsPage = () => {
                 <Button 
                   variant="ghost" 
                   size="icon"
-                  onClick={() => handleDeleteStat(stat.team_name)}
+                  onClick={() => handleDeleteStat(stat.team_id)}
                   className="absolute top-2 right-2 h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-transparent"
                 >
                   <Trash2 className="h-4 w-4" />
