@@ -244,10 +244,12 @@ const FullSchedule = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-  // Function to update team statistics based on game results
+  };  // Function to update team statistics based on game results
   const updateTeamStatistics = async (teamId: string) => {
     try {
+      console.log('=== updateTeamStatistics CALLED ===');
+      console.log('Team ID:', teamId);
+      
       // Count wins and losses for the team from the game table
       const { data: games, error: gamesError } = await supabase
         .from('game')
@@ -256,8 +258,10 @@ const FullSchedule = () => {
 
       if (gamesError) throw gamesError;
 
+      console.log('Games data:', games);
       const wins = games?.filter(game => game.game_status === 'Win').length || 0;
       const losses = games?.filter(game => game.game_status === 'Loss').length || 0;
+      console.log('Calculated wins:', wins, 'losses:', losses);
 
       // Check if a stats record exists for this team
       const { data: existingStats, error: statsCheckError } = await supabase
@@ -271,8 +275,11 @@ const FullSchedule = () => {
         throw statsCheckError;
       }
 
+      console.log('Existing stats:', existingStats);
+
       if (existingStats) {
         // Update existing stats record
+        console.log('Updating existing stats record');
         const { error: updateError } = await supabase
           .from('stats')
           .update({
@@ -282,8 +289,10 @@ const FullSchedule = () => {
           .eq('team_id', teamId);
 
         if (updateError) throw updateError;
+        console.log('Stats updated successfully');
       } else {
         // Create new stats record
+        console.log('Creating new stats record');
         const { error: insertError } = await supabase
           .from('stats')
           .insert({
@@ -293,6 +302,7 @@ const FullSchedule = () => {
           });
 
         if (insertError) throw insertError;
+        console.log('New stats record created successfully');
       }
 
       console.log(`Updated statistics for team ${teamId}: ${wins} wins, ${losses} losses`);
@@ -595,25 +605,33 @@ const FullSchedule = () => {
         .update(updateData)
         .eq("game_id", editingGame.game_id);
 
-      if (gameError) throw gameError;
-
-      // Update team statistics if game status changed to Win or Loss
+      if (gameError) throw gameError;      // Update team statistics if game status changed to Win or Loss
       const previousStatus = editingGame.game_status;
       const newStatus = updateData.game_status || previousStatus;
+      
+      console.log('=== STATISTICS UPDATE DEBUG ===');
+      console.log('Previous status:', previousStatus);
+      console.log('New status:', newStatus);
+      console.log('Team ID:', values.team_id);
       
       if ((newStatus === 'Win' || newStatus === 'Loss') && 
           (previousStatus !== 'Win' && previousStatus !== 'Loss')) {
         // Status changed from non-result to result - update statistics
+        console.log('Case 1: Non-result to result - updating statistics');
         await updateTeamStatistics(values.team_id);
       } else if ((previousStatus === 'Win' || previousStatus === 'Loss') && 
                  (newStatus === 'Win' || newStatus === 'Loss') && 
                  previousStatus !== newStatus) {
         // Status changed from one result to another - update statistics
+        console.log('Case 2: Result to different result - updating statistics');
         await updateTeamStatistics(values.team_id);
       } else if ((previousStatus === 'Win' || previousStatus === 'Loss') && 
                  (newStatus !== 'Win' && newStatus !== 'Loss')) {
         // Status changed from result to non-result - update statistics
+        console.log('Case 3: Result to non-result - updating statistics');
         await updateTeamStatistics(values.team_id);
+      } else {
+        console.log('No statistics update needed - conditions not met');
       }
 
       // Update player participation only if game hasn't started
