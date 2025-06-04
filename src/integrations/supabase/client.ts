@@ -5,7 +5,51 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://udirgtprghlseratvyho.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkaXJndHByZ2hsc2VyYXR2eWhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzNjE4ODYsImV4cCI6MjA2MTkzNzg4Nn0.NWUyBq3awnClnMa5J3bRrMHLmJsEdRJnL_knyD7XcLk";
 
+// Configure Supabase to work around browser storage restrictions
+const supabaseOptions = {
+  auth: {
+    // Disable automatic token refresh to avoid storage issues
+    autoRefreshToken: false,
+    // Use memory storage instead of localStorage/sessionStorage
+    storage: {
+      getItem: (key: string) => {
+        // Use in-memory storage fallback
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          try {
+            return window.sessionStorage.getItem(key);
+          } catch {
+            return null;
+          }
+        }
+        return null;
+      },
+      setItem: (key: string, value: string) => {
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          try {
+            window.sessionStorage.setItem(key, value);
+          } catch {
+            // Silently fail if storage is not available
+          }
+        }
+      },
+      removeItem: (key: string) => {
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          try {
+            window.sessionStorage.removeItem(key);
+          } catch {
+            // Silently fail if storage is not available
+          }
+        }
+      }
+    },
+    // Disable persistence to avoid storage issues
+    persistSession: false,
+    // Detect session from URL only
+    detectSessionInUrl: false
+  }
+};
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, supabaseOptions);
