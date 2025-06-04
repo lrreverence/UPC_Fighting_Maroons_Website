@@ -38,7 +38,8 @@ type NewsFormValues = {
   reference_link?: string;
 }
 
-export default function NewsPage() {  const [allNews, setAllNews] = useState<NewsItem[]>([]);
+export default function NewsPage() {
+  const [allNews, setAllNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -49,7 +50,8 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
   const fetchNews = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      // Use type assertion to work around TypeScript limitation
+      const { data, error } = await (supabase as any)
         .from('news')
         .select('*')
         .order('date', { ascending: false });
@@ -75,7 +77,8 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
+      // Use type assertion to work around TypeScript limitation
+      const { error } = await (supabase as any)
         .from('news')
         .delete()
         .eq('id', id);
@@ -109,7 +112,10 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
         month: 'long',
         day: 'numeric',
         year: 'numeric'
-      });      const { error } = await supabase
+      });
+
+      // Use type assertion to work around TypeScript limitation
+      const { error } = await (supabase as any)
         .from('news')
         .insert([
           {
@@ -133,7 +139,8 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
         description: "News item added successfully.",
       });
     } catch (error) {
-      console.error("Error adding news:", error);      toast({
+      console.error("Error adding news:", error);
+      toast({
         title: "Error",
         description: "Failed to add news item.",
         variant: "destructive",
@@ -167,7 +174,8 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
         year: 'numeric'
       });
 
-      const { error } = await supabase
+      // Use type assertion to work around TypeScript limitation
+      const { error } = await (supabase as any)
         .from('news')
         .update({
           title: data.title,
@@ -198,7 +206,9 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
         variant: "destructive",
       });
     }
-  };  return (
+  };
+
+  return (
     <div className="h-screen flex flex-col overflow-hidden">
       <main className="flex-grow bg-gray-50 py-8 overflow-y-auto scroll-smooth custom-scrollbar">
         <div className="container mx-auto px-6 max-w-7xl min-h-full">
@@ -223,6 +233,7 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit(handleAddNews)} className="space-y-4 pt-4">
+                  
                   <div className="space-y-2">
                     <label htmlFor="title" className="text-sm font-medium">Title</label>
                     <Input
@@ -255,7 +266,8 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
                       {...register("date")}
                     />
                     <p className="text-xs text-gray-500">Leave empty to use today's date</p>
-                  </div>                  <div className="space-y-2">
+                  </div>
+                  <div className="space-y-2">
                     <label htmlFor="image" className="text-sm font-medium">News Image</label>
                     <ImageUpload 
                       onImageSelected={handleImageSelected}
@@ -288,7 +300,8 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <div className="h-8 w-8 border-4 border-maroon border-t-transparent rounded-full animate-spin"></div>
-            </div>          ) : (
+            </div>
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
               {allNews.map((news) => (
                 <Card key={news.id} className="flex flex-col overflow-hidden hover:shadow-lg transition-shadow">
@@ -309,7 +322,8 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
                     <p className="text-gray-600 text-sm">{news.excerpt}</p>
                   </CardContent>
                   <CardFooter className="flex justify-between items-center pt-0 border-t border-gray-100">
-                    <span className="text-sm text-gray-500">{news.date}</span>                    <div className="flex gap-2 items-center">
+                    <span className="text-sm text-gray-500">{news.date}</span>
+                    <div className="flex gap-2 items-center">
                       {news.reference_link ? (
                         <a 
                           href={news.reference_link}
@@ -325,7 +339,8 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
                           className="text-forest font-medium text-sm hover:underline"
                         >
                           Read more
-                        </Link>                      )}
+                        </Link>
+                      )}
                       <Button
                         variant="ghost" 
                         size="sm"
@@ -345,11 +360,13 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
                     </div>
                   </CardFooter>
                 </Card>
-              ))}            </div>
+              ))}
+            </div>
           )}
         </div>
       </main>
-        {/* Edit News Dialog */}
+      
+      {/* Edit News Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[525px] max-h-[90vh] overflow-y-auto custom-scrollbar">
           <DialogHeader>
@@ -359,6 +376,7 @@ export default function NewsPage() {  const [allNews, setAllNews] = useState<New
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit(handleUpdateNews)} className="space-y-4 pt-4">
+            
             <div className="space-y-2">
               <label htmlFor="edit-title" className="text-sm font-medium">Title</label>
               <Input

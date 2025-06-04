@@ -168,6 +168,39 @@ export type Database = {
           },
         ]
       }
+      news: {
+        Row: {
+          category: string | null
+          created_at: string
+          date: string
+          excerpt: string | null
+          id: string
+          image: string | null
+          reference_link: string | null
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          date: string
+          excerpt?: string | null
+          id?: string
+          image?: string | null
+          reference_link?: string | null
+          title: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          date?: string
+          excerpt?: string | null
+          id?: string
+          image?: string | null
+          reference_link?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       stats: {
         Row: {
           events: number | null

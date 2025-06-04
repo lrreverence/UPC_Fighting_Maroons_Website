@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Newspaper as NewsIcon, Trash2 } from "lucide-react";
+import { Newspaper as NewsIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -24,7 +24,8 @@ const NewsSection = () => {
     const fetchNews = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
+        // Use type assertion to work around TypeScript limitation
+        const { data, error } = await (supabase as any)
           .from('news')
           .select('*')
           .order('date', { ascending: false })
@@ -74,7 +75,8 @@ const NewsSection = () => {
                 <CardContent className="flex-grow pt-6">
                   <h3 className="font-bold text-lg mb-2">{news.title}</h3>
                   <p className="text-gray-600 text-sm">{news.excerpt}</p>
-                </CardContent>                <CardFooter className="flex justify-between items-center pt-0 border-t border-gray-100">
+                </CardContent>
+                <CardFooter className="flex justify-between items-center pt-0 border-t border-gray-100">
                   <span className="text-sm text-gray-500">{news.date}</span>
                   {news.reference_link ? (
                     <a 
