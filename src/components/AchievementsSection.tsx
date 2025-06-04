@@ -1,84 +1,94 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Award as AwardIcon } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { Award } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 type Achievement = {
-  id: string;
+  team_name: string;
   title: string;
-  year: string;
-  description: string;
+  year: number;
+  achievement_description?: string;
 };
 
 const AchievementsSection = () => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAchievements = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('achievements')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(6);
-        
-        if (error) throw error;
-        
-        setAchievements(data as Achievement[]);
-      } catch (error) {
-        console.error("Error fetching achievements:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load achievements data.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchAchievements = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('achievement')
+        .select('*')
+        .order('year', { ascending: false })
+        .limit(4);
+      
+      if (error) throw error;
+      
+      setAchievements(data as Achievement[]);
+    } catch (error) {
+      console.error("Error fetching achievements:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load achievements data.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchAchievements();
   }, []);
 
+  if (loading) {
+    return (
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-6">
+          <div className="flex justify-center items-center py-12">
+            <div className="h-8 w-8 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
+            <span className="ml-3 text-gray-600">Loading achievements...</span>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section id="achievements" className="py-16 bg-gray-50">
+    <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-6">
-        <div className="flex items-center gap-3 mb-10">
-          <AwardIcon className="h-8 w-8 text-maroon" />
-          <h2 className="text-3xl font-bold text-maroon">Recent Achievements</h2>
+        <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center gap-3">
+            <Award className="h-8 w-8 text-gold" />
+            <h2 className="text-3xl font-bold text-maroon">Recent Achievements</h2>
+          </div>
+          <Button asChild variant="outline" className="border-gold text-gold hover:bg-gold hover:text-white">
+            <Link to="/achievements">View All Achievements</Link>
+          </Button>
         </div>
         
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="h-8 w-8 border-4 border-maroon border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {achievements.map((achievement) => (
-              <Card key={achievement.id} className="border-t-4 border-gold hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-bold">{achievement.title}</h3>
-                    <span className="bg-maroon text-white text-sm px-3 py-1 rounded-full">
-                      {achievement.year}
-                    </span>
-                  </div>
-                  <p className="text-gray-600">{achievement.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-        
-        <div className="text-center mt-10">
-          <Link to="/achievements" className="text-forest font-semibold hover:text-forest-dark underline">
-            View all achievements →
-          </Link>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {achievements.map((achievement, index) => (
+            <Card key={`${achievement.team_name}-${achievement.title}-${achievement.year}`} className="border-t-4 border-gold hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-bold">{achievement.title}</h3>
+                  <span className="bg-maroon text-white text-sm px-3 py-1 rounded-full">
+                    {achievement.year}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">{achievement.team_name}</p>
+                {achievement.achievement_description && (
+                  <p className="text-sm text-gray-600">{achievement.achievement_description}</p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </section>

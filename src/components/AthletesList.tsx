@@ -1,20 +1,25 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 type Athlete = {
-  id: string;
-  name: string;
-  sport: string;
-  course: string;
-  year: string;
-  position: string;
-  hometown: string;
-  achievements: string | null;
-  image_url: string | null;
+  student_id: number;
+  fname: string;
+  mname?: string;
+  lname: string;
+  birthdate?: string;
+  hometown?: string;
+  email?: string;
+  phone_number?: string;
+  department?: string;
+  course?: string;
+  year_level?: number;
+  block?: string;
+  team_name?: string;
 };
 
 const AthletesList = () => {
@@ -22,23 +27,21 @@ const AthletesList = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchAthletes = async () => {
-    setLoading(true);
-    
     try {
+      setLoading(true);
       const { data, error } = await supabase
-        .from('athletes')
+        .from('athlete')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('lname');
       
       if (error) throw error;
       
-      console.log('Fetched athletes:', data);
-      setAthletes(data || []);
+      setAthletes(data as Athlete[]);
     } catch (error) {
       console.error("Error fetching athletes:", error);
       toast({
         title: "Error",
-        description: "Failed to load athletes. Please refresh the page.",
+        description: "Failed to load athletes data.",
         variant: "destructive",
       });
     } finally {
@@ -50,55 +53,28 @@ const AthletesList = () => {
     fetchAthletes();
   }, []);
 
-  const handleDeleteAthlete = async (id: string) => {
+  const handleDeleteAthlete = async (studentId: number) => {
     if (!confirm("Are you sure you want to delete this athlete?")) return;
 
     try {
-      console.log('Attempting to delete athlete with ID:', id);
-      
-      // First verify the athlete exists
-      const { data: existingAthlete, error: fetchError } = await supabase
-        .from('athletes')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (fetchError) {
-        console.error('Error fetching athlete:', fetchError);
-        throw fetchError;
-      }
-      
-      if (!existingAthlete) {
-        throw new Error('Athlete not found');
-      }
-      
-      console.log('Found athlete to delete:', existingAthlete);
-      
-      // Perform the deletion
-      const { error: deleteError } = await supabase
-        .from('athletes')
+      const { error } = await supabase
+        .from('athlete')
         .delete()
-        .eq('id', id);
+        .eq('student_id', studentId);
       
-      if (deleteError) {
-        console.error('Error deleting athlete:', deleteError);
-        throw deleteError;
-      }
+      if (error) throw error;
       
-      console.log('Successfully deleted athlete from Supabase');
-      
-      // Update local state
-      setAthletes(athletes.filter(athlete => athlete.id !== id));
+      setAthletes(athletes.filter(athlete => athlete.student_id !== studentId));
       
       toast({
         title: "Success",
         description: "Athlete deleted successfully.",
       });
     } catch (error) {
-      console.error("Error in delete process:", error);
+      console.error("Error deleting athlete:", error);
       toast({
         title: "Error",
-        description: "Failed to delete athlete. Please try again.",
+        description: "Failed to delete athlete.",
         variant: "destructive",
       });
     }
@@ -107,10 +83,8 @@ const AthletesList = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="text-center">
-          <div className="h-8 w-8 border-4 border-maroon border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading athletes...</p>
-        </div>
+        <div className="h-8 w-8 border-4 border-maroon border-t-transparent rounded-full animate-spin"></div>
+        <span className="ml-3 text-gray-600">Loading athletes...</span>
       </div>
     );
   }
@@ -118,53 +92,42 @@ const AthletesList = () => {
   if (athletes.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-lg text-gray-600">No athletes found. Add your first athlete!</p>
+        <p className="text-gray-600">No athletes found. Add your first athlete!</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {athletes.map((athlete) => (
-        <Card key={athlete.id} className="overflow-hidden hover:shadow-lg transition-shadow relative">
-          <div className="h-64 overflow-hidden">
-            <img 
-              src={athlete.image_url || "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=600"} 
-              alt={athlete.name} 
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => handleDeleteAthlete(athlete.id)}
-            className="absolute top-2 right-2 h-8 w-8 text-white hover:text-red-500 hover:bg-white/70 bg-black/30"
-          >
-            <Trash2 className="h-4 w-4" />
-            <span className="sr-only">Delete</span>
-          </Button>
-          <CardContent className="pt-4">
-            <h3 className="text-xl font-bold">{athlete.name}</h3>
-            <div className="flex justify-between items-center mt-2">
-              <span className="bg-maroon text-white text-sm px-3 py-1 rounded-full">
-                {athlete.sport}
-              </span>
-              <span className="text-sm text-gray-600">{athlete.course}</span>
+        <Card key={athlete.student_id} className="overflow-hidden hover:shadow-lg transition-shadow relative">
+          <CardContent className="p-6">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleDeleteAthlete(athlete.student_id)}
+              className="absolute top-2 right-2 h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-transparent"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="sr-only">Delete</span>
+            </Button>
+            
+            <h3 className="text-xl font-bold mb-4 pr-8">
+              {athlete.fname} {athlete.mname ? `${athlete.mname} ` : ''}{athlete.lname}
+            </h3>
+            
+            <div className="space-y-2 text-sm text-gray-600">
+              <p><strong>Student ID:</strong> {athlete.student_id}</p>
+              {athlete.team_name && <p><strong>Team:</strong> {athlete.team_name}</p>}
+              {athlete.course && <p><strong>Course:</strong> {athlete.course}</p>}
+              {athlete.year_level && <p><strong>Year:</strong> {athlete.year_level}</p>}
+              {athlete.department && <p><strong>Department:</strong> {athlete.department}</p>}
+              {athlete.block && <p><strong>Block:</strong> {athlete.block}</p>}
+              {athlete.hometown && <p><strong>Hometown:</strong> {athlete.hometown}</p>}
+              {athlete.email && <p><strong>Email:</strong> {athlete.email}</p>}
+              {athlete.phone_number && <p><strong>Phone:</strong> {athlete.phone_number}</p>}
+              {athlete.birthdate && <p><strong>Birthdate:</strong> {new Date(athlete.birthdate).toLocaleDateString()}</p>}
             </div>
-            <p className="mt-3 text-sm text-gray-700">
-              <span className="font-medium">Year:</span> {athlete.year}
-            </p>
-            <p className="text-sm text-gray-700">
-              <span className="font-medium">Position:</span> {athlete.position}
-            </p>
-            <p className="text-sm text-gray-700">
-              <span className="font-medium">Hometown:</span> {athlete.hometown}
-            </p>
-            {athlete.achievements && (
-              <p className="mt-2 text-sm text-gray-700">
-                <span className="font-medium">Achievements:</span> {athlete.achievements}
-              </p>
-            )}
           </CardContent>
         </Card>
       ))}

@@ -9,32 +9,60 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Achievement = {
-  id: string;
+  team_name: string;
   title: string;
-  year: string;
-  description: string;
+  year: number;
+  achievement_description?: string;
+};
+
+type Team = {
+  team_name: string;
+  sport: string;
 };
 
 export default function AchievementsPage() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [newAchievement, setNewAchievement] = useState({
+    team_name: "",
     title: "",
-    year: new Date().getFullYear().toString(),
-    description: ""
+    year: new Date().getFullYear(),
+    achievement_description: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchTeams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('team')
+        .select('team_name, sport')
+        .order('team_name');
+      
+      if (error) throw error;
+      setTeams(data as Team[]);
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+    }
+  };
 
   const fetchAchievements = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('achievements')
+        .from('achievement')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('year', { ascending: false });
       
       if (error) throw error;
       
@@ -52,21 +80,26 @@ export default function AchievementsPage() {
   };
 
   useEffect(() => {
+    fetchTeams();
     fetchAchievements();
   }, []);
 
-  const handleDeleteAchievement = async (id: string) => {
+  const handleDeleteAchievement = async (teamName: string, title: string, year: number) => {
     if (!confirm("Are you sure you want to delete this achievement?")) return;
 
     try {
       const { error } = await supabase
-        .from('achievements')
+        .from('achievement')
         .delete()
-        .eq('id', id);
+        .eq('team_name', teamName)
+        .eq('title', title)
+        .eq('year', year);
       
       if (error) throw error;
       
-      setAchievements(achievements.filter(achievement => achievement.id !== id));
+      setAchievements(achievements.filter(achievement => 
+        !(achievement.team_name === teamName && achievement.title === title && achievement.year === year)
+      ));
       
       toast({
         title: "Success",
@@ -85,11 +118,10 @@ export default function AchievementsPage() {
   const handleAddAchievement = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate inputs
-    if (!newAchievement.title.trim() || !newAchievement.year.trim() || !newAchievement.description.trim()) {
+    if (!newAchievement.team_name || !newAchievement.title) {
       toast({
         title: "Error",
-        description: "All fields are required.",
+        description: "Team and Title are required.",
         variant: "destructive",
       });
       return;
@@ -99,32 +131,30 @@ export default function AchievementsPage() {
     
     try {
       const { data, error } = await supabase
-        .from('achievements')
+        .from('achievement')
         .insert([{
+          team_name: newAchievement.team_name,
           title: newAchievement.title,
           year: newAchievement.year,
-          description: newAchievement.description
+          achievement_description: newAchievement.achievement_description || null
         }])
         .select();
       
       if (error) throw error;
-      
-      setAchievements([...data as Achievement[], ...achievements]);
       
       toast({
         title: "Success",
         description: "Achievement added successfully.",
       });
       
-      // Reset form and close dialog
       setNewAchievement({
+        team_name: "",
         title: "",
-        year: new Date().getFullYear().toString(),
-        description: ""
+        year: new Date().getFullYear(),
+        achievement_description: ""
       });
       setOpen(false);
       
-      // Refresh achievements list
       fetchAchievements();
     } catch (error) {
       console.error("Error adding achievement:", error);
@@ -159,6 +189,22 @@ export default function AchievementsPage() {
               </DialogHeader>
               <form onSubmit={handleAddAchievement} className="space-y-4">
                 <div className="grid gap-2">
+                  <Label htmlFor="team_name">Team</Label>
+                  <Select value={newAchievement.team_name} onValueChange={(value) => setNewAchievement({...newAchievement, team_name: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a team" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams.map((team) => (
+                        <SelectItem key={team.team_name} value={team.team_name}>
+                          {team.team_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid gap-2">
                   <Label htmlFor="title">Title</Label>
                   <Input 
                     id="title" 
@@ -173,21 +219,21 @@ export default function AchievementsPage() {
                   <Label htmlFor="year">Year</Label>
                   <Input 
                     id="year" 
+                    type="number"
                     value={newAchievement.year}
-                    onChange={(e) => setNewAchievement({...newAchievement, year: e.target.value})}
+                    onChange={(e) => setNewAchievement({...newAchievement, year: parseInt(e.target.value)})}
                     placeholder="2024" 
                     required
                   />
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="achievement_description">Description</Label>
                   <Textarea 
-                    id="description" 
-                    value={newAchievement.description}
-                    onChange={(e) => setNewAchievement({...newAchievement, description: e.target.value})}
+                    id="achievement_description" 
+                    value={newAchievement.achievement_description}
+                    onChange={(e) => setNewAchievement({...newAchievement, achievement_description: e.target.value})}
                     placeholder="Achievement description" 
-                    required
                   />
                 </div>
                 
@@ -216,13 +262,13 @@ export default function AchievementsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {achievements.map((achievement) => (
-              <Card key={achievement.id} className="border-t-4 border-gold hover:shadow-md transition-shadow relative">
+            {achievements.map((achievement, index) => (
+              <Card key={`${achievement.team_name}-${achievement.title}-${achievement.year}-${index}`} className="border-t-4 border-gold hover:shadow-md transition-shadow relative">
                 <CardContent className="p-6">
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    onClick={() => handleDeleteAchievement(achievement.id)}
+                    onClick={() => handleDeleteAchievement(achievement.team_name, achievement.title, achievement.year)}
                     className="absolute top-2 right-2 h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-transparent"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -234,7 +280,10 @@ export default function AchievementsPage() {
                       {achievement.year}
                     </span>
                   </div>
-                  <p className="text-gray-600">{achievement.description}</p>
+                  <p className="text-sm text-gray-600 mb-2">{achievement.team_name}</p>
+                  {achievement.achievement_description && (
+                    <p className="text-gray-600">{achievement.achievement_description}</p>
+                  )}
                 </CardContent>
               </Card>
             ))}

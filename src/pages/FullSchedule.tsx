@@ -28,55 +28,87 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Game {
-  id: string;
-  sport: string;
-  opponent: string;
-  date: string;
-  time: string;
-  venue: string;
+  game_id: string;
+  game_date: string;
+  start_time: string;
+  end_time?: string;
+  location?: string;
+  game_status?: string;
+  team_name?: string;
+  opponent_team?: string;
 }
 
 interface GameFormValues {
+  game_id: string;
+  game_date: string;
+  start_time: string;
+  end_time: string;
+  location: string;
+  game_status: string;
+  team_name: string;
+  opponent_team: string;
+}
+
+interface Team {
+  team_name: string;
   sport: string;
-  opponent: string;
-  date: string;
-  time: string;
-  venue: string;
 }
 
 const FullSchedule = () => {
   const [games, setGames] = useState<Game[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<GameFormValues>({
     defaultValues: {
-      sport: "",
-      opponent: "",
-      date: "",
-      time: "",
-      venue: "",
+      game_id: "",
+      game_date: "",
+      start_time: "",
+      end_time: "",
+      location: "",
+      game_status: "Scheduled",
+      team_name: "",
+      opponent_team: "",
     },
   });
+
+  const fetchTeams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("team")
+        .select("team_name, sport")
+        .order("team_name");
+
+      if (error) throw error;
+      setTeams(data as Team[]);
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+    }
+  };
 
   const fetchGames = async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from("games")
+        .from("game")
         .select("*")
-        .order("date");
+        .order("game_date");
 
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
       setGames(data as Game[]);
     } catch (error) {
       console.error("Error fetching games:", error);
@@ -91,16 +123,24 @@ const FullSchedule = () => {
   };
 
   useEffect(() => {
+    fetchTeams();
     fetchGames();
   }, []);
 
   const handleAddGame = async (values: GameFormValues) => {
     try {
-      const { error } = await supabase.from("games").insert([values]);
+      const { error } = await supabase.from("game").insert([{
+        game_id: values.game_id,
+        game_date: values.game_date,
+        start_time: values.start_time,
+        end_time: values.end_time || null,
+        location: values.location || null,
+        game_status: values.game_status || 'Scheduled',
+        team_name: values.team_name || null,
+        opponent_team: values.opponent_team || null,
+      }]);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Game added",
@@ -120,13 +160,11 @@ const FullSchedule = () => {
     }
   };
 
-  const handleDeleteGame = async (id: string) => {
+  const handleDeleteGame = async (gameId: string) => {
     try {
-      const { error } = await supabase.from("games").delete().eq("id", id);
+      const { error } = await supabase.from("game").delete().eq("game_id", gameId);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Game deleted",
@@ -142,6 +180,23 @@ const FullSchedule = () => {
         description: "There was a problem deleting the game.",
       });
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const formatTime = (timeString: string) => {
+    return new Date(`1970-01-01T${timeString}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   return (
@@ -160,7 +215,7 @@ const FullSchedule = () => {
                   <Plus className="mr-1" /> Add Game
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle>Add New Game</DialogTitle>
                 </DialogHeader>
@@ -168,12 +223,12 @@ const FullSchedule = () => {
                   <form onSubmit={form.handleSubmit(handleAddGame)} className="space-y-4">
                     <FormField
                       control={form.control}
-                      name="sport"
+                      name="game_id"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Sport</FormLabel>
+                          <FormLabel>Game ID</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Basketball" required {...field} />
+                            <Input placeholder="e.g. GAME004" required {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -181,7 +236,31 @@ const FullSchedule = () => {
                     />
                     <FormField
                       control={form.control}
-                      name="opponent"
+                      name="team_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Team</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a team" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {teams.map((team) => (
+                                <SelectItem key={team.team_name} value={team.team_name}>
+                                  {team.team_name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="opponent_team"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Opponent</FormLabel>
@@ -192,41 +271,80 @@ const FullSchedule = () => {
                         </FormItem>
                       )}
                     />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="game_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" required {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="start_time"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start Time</FormLabel>
+                            <FormControl>
+                              <Input type="time" required {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="end_time"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>End Time</FormLabel>
+                            <FormControl>
+                              <Input type="time" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Venue</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. UP Cebu Gymnasium" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <FormField
                       control={form.control}
-                      name="date"
+                      name="game_status"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Date</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. June 15, 2025" required {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="time"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Time</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. 4:00 PM" required {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="venue"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Venue</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. UP Cebu Gymnasium" required {...field} />
-                          </FormControl>
+                          <FormLabel>Status</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Scheduled">Scheduled</SelectItem>
+                              <SelectItem value="Completed">Completed</SelectItem>
+                              <SelectItem value="Cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -253,27 +371,41 @@ const FullSchedule = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-maroon">
-                      <TableHead className="text-white">Sport</TableHead>
+                      <TableHead className="text-white">Game ID</TableHead>
+                      <TableHead className="text-white">Team</TableHead>
                       <TableHead className="text-white">Opponent</TableHead>
                       <TableHead className="text-white">Date</TableHead>
                       <TableHead className="text-white">Time</TableHead>
                       <TableHead className="text-white">Venue</TableHead>
+                      <TableHead className="text-white">Status</TableHead>
                       <TableHead className="text-white w-[80px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {games.map((game) => (
-                      <TableRow key={game.id}>
-                        <TableCell className="font-medium text-maroon">{game.sport}</TableCell>
-                        <TableCell>vs. {game.opponent}</TableCell>
-                        <TableCell>{game.date}</TableCell>
-                        <TableCell>{game.time}</TableCell>
-                        <TableCell>{game.venue}</TableCell>
+                      <TableRow key={game.game_id}>
+                        <TableCell className="font-medium text-maroon">{game.game_id}</TableCell>
+                        <TableCell>{game.team_name || 'Fighting Maroons'}</TableCell>
+                        <TableCell>vs. {game.opponent_team}</TableCell>
+                        <TableCell>{formatDate(game.game_date)}</TableCell>
+                        <TableCell>{formatTime(game.start_time)}</TableCell>
+                        <TableCell>{game.location || 'TBD'}</TableCell>
+                        <TableCell>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            game.game_status === 'Completed' 
+                              ? 'bg-green-100 text-green-800' 
+                              : game.game_status === 'Cancelled'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {game.game_status || 'Scheduled'}
+                          </span>
+                        </TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDeleteGame(game.id)}
+                            onClick={() => handleDeleteGame(game.game_id)}
                             className="text-red-500 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-4 w-4" />

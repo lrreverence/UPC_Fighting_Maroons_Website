@@ -9,168 +9,221 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      achievements: {
+      achievement: {
         Row: {
-          created_at: string
-          description: string
-          id: string
+          achievement_description: string | null
+          team_name: string
           title: string
-          year: string
+          year: number
         }
         Insert: {
-          created_at?: string
-          description: string
-          id?: string
+          achievement_description?: string | null
+          team_name: string
           title: string
-          year: string
+          year: number
         }
         Update: {
-          created_at?: string
-          description?: string
-          id?: string
+          achievement_description?: string | null
+          team_name?: string
           title?: string
-          year?: string
+          year?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "achievement_team_name_fkey"
+            columns: ["team_name"]
+            isOneToOne: false
+            referencedRelation: "team"
+            referencedColumns: ["team_name"]
+          },
+        ]
       }
-      athletes: {
+      athlete: {
         Row: {
-          achievements: string | null
-          course: string
-          created_at: string
-          hometown: string
-          id: string
-          image_url: string | null
-          name: string
-          position: string
-          sport: string
-          year: string
+          birthdate: string | null
+          block: string | null
+          course: string | null
+          department: string | null
+          email: string | null
+          fname: string
+          hometown: string | null
+          lname: string
+          mname: string | null
+          phone_number: string | null
+          student_id: number
+          team_name: string | null
+          year_level: number | null
         }
         Insert: {
-          achievements?: string | null
-          course: string
-          created_at?: string
-          hometown: string
-          id?: string
-          image_url?: string | null
-          name: string
-          position: string
-          sport: string
-          year: string
+          birthdate?: string | null
+          block?: string | null
+          course?: string | null
+          department?: string | null
+          email?: string | null
+          fname: string
+          hometown?: string | null
+          lname: string
+          mname?: string | null
+          phone_number?: string | null
+          student_id: number
+          team_name?: string | null
+          year_level?: number | null
         }
         Update: {
-          achievements?: string | null
-          course?: string
-          created_at?: string
-          hometown?: string
-          id?: string
-          image_url?: string | null
-          name?: string
-          position?: string
-          sport?: string
-          year?: string
+          birthdate?: string | null
+          block?: string | null
+          course?: string | null
+          department?: string | null
+          email?: string | null
+          fname?: string
+          hometown?: string | null
+          lname?: string
+          mname?: string | null
+          phone_number?: string | null
+          student_id?: number
+          team_name?: string | null
+          year_level?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "athlete_team_name_fkey"
+            columns: ["team_name"]
+            isOneToOne: false
+            referencedRelation: "team"
+            referencedColumns: ["team_name"]
+          },
+        ]
       }
-      games: {
+      game: {
         Row: {
-          created_at: string
-          date: string
-          id: string
-          opponent: string
-          sport: string
-          time: string
-          venue: string
+          end_time: string | null
+          game_date: string
+          game_id: string
+          game_status: string | null
+          location: string | null
+          opponent_team: string | null
+          start_time: string
+          team_name: string | null
         }
         Insert: {
-          created_at?: string
-          date: string
-          id?: string
-          opponent: string
-          sport: string
-          time: string
-          venue: string
+          end_time?: string | null
+          game_date: string
+          game_id: string
+          game_status?: string | null
+          location?: string | null
+          opponent_team?: string | null
+          start_time: string
+          team_name?: string | null
         }
         Update: {
-          created_at?: string
-          date?: string
-          id?: string
-          opponent?: string
-          sport?: string
-          time?: string
-          venue?: string
+          end_time?: string | null
+          game_date?: string
+          game_id?: string
+          game_status?: string | null
+          location?: string | null
+          opponent_team?: string | null
+          start_time?: string
+          team_name?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "game_team_name_fkey"
+            columns: ["team_name"]
+            isOneToOne: false
+            referencedRelation: "team"
+            referencedColumns: ["team_name"]
+          },
+        ]
       }
-      news: {
+      game_participation: {
         Row: {
-          category: string
-          created_at: string
-          date: string
-          excerpt: string
-          id: string
-          image: string
-          reference_link: string | null
-          title: string
+          game_id: string
+          stat_description: string | null
+          student_id: number
         }
         Insert: {
-          category: string
-          created_at?: string
-          date: string
-          excerpt: string
-          id?: string
-          image: string
-          reference_link?: string | null
-          title: string
+          game_id: string
+          stat_description?: string | null
+          student_id: number
         }
         Update: {
-          category?: string
-          created_at?: string
-          date?: string
-          excerpt?: string
-          id?: string
-          image?: string
-          reference_link?: string | null
-          title?: string
+          game_id?: string
+          stat_description?: string | null
+          student_id?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "game_participation_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "game"
+            referencedColumns: ["game_id"]
+          },
+          {
+            foreignKeyName: "game_participation_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "athlete"
+            referencedColumns: ["student_id"]
+          },
+        ]
       }
       stats: {
         Row: {
-          created_at: string
           events: number | null
-          id: string
           losses: number | null
           medals: number | null
           points: number | null
           records: number | null
-          title: string
-          top_performer: string
+          team_name: string
+          top_performer: string | null
           wins: number | null
         }
         Insert: {
-          created_at?: string
           events?: number | null
-          id?: string
           losses?: number | null
           medals?: number | null
           points?: number | null
           records?: number | null
-          title: string
-          top_performer: string
+          team_name: string
+          top_performer?: string | null
           wins?: number | null
         }
         Update: {
-          created_at?: string
           events?: number | null
-          id?: string
           losses?: number | null
           medals?: number | null
           points?: number | null
           records?: number | null
-          title?: string
-          top_performer?: string
+          team_name?: string
+          top_performer?: string | null
           wins?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stats_team_name_fkey"
+            columns: ["team_name"]
+            isOneToOne: true
+            referencedRelation: "team"
+            referencedColumns: ["team_name"]
+          },
+        ]
+      }
+      team: {
+        Row: {
+          coach_name: string
+          sport: string
+          team_name: string
+        }
+        Insert: {
+          coach_name: string
+          sport: string
+          team_name: string
+        }
+        Update: {
+          coach_name?: string
+          sport?: string
+          team_name?: string
         }
         Relationships: []
       }

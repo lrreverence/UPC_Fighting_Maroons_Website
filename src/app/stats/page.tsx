@@ -1,32 +1,45 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { BarChart as BarChartIcon, Loader2, Plus } from "lucide-react";
+import { BarChart as BarChartIcon, Loader2, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface StatData {
-  id: string;
-  title: string;
+  team_name: string;
+  top_performer?: string;
   wins?: number;
   losses?: number;
   points?: number;
   medals?: number;
   records?: number;
   events?: number;
-  top_performer: string;
+}
+
+interface Team {
+  team_name: string;
+  sport: string;
 }
 
 const StatsPage = () => {
   const [stats, setStats] = useState<StatData[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [newStat, setNewStat] = useState({
-    title: "",
+    team_name: "",
     wins: undefined,
     losses: undefined,
     points: undefined,
@@ -37,18 +50,29 @@ const StatsPage = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const fetchTeams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('team')
+        .select('team_name, sport')
+        .order('team_name');
+
+      if (error) throw error;
+      setTeams(data as Team[]);
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+    }
+  };
+
   const fetchStats = async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('stats')
         .select('*')
-        .order('title');
+        .order('team_name');
 
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
       setStats(data as StatData[]);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -63,17 +87,17 @@ const StatsPage = () => {
   };
 
   useEffect(() => {
+    fetchTeams();
     fetchStats();
-  }, [toast]);
+  }, []);
 
-  // Fix the insert statement by ensuring required fields are properly set
   const handleAddStat = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newStat.title || !newStat.top_performer) {
+    if (!newStat.team_name) {
       toast({
         title: "Error",
-        description: "Title and Top Performer fields are required.",
+        description: "Team selection is required.",
         variant: "destructive",
       });
       return;
@@ -82,14 +106,14 @@ const StatsPage = () => {
     setIsSubmitting(true);
     try {
       const statToSubmit = {
-        title: newStat.title,
+        team_name: newStat.team_name,
         wins: newStat.wins,
         losses: newStat.losses,
         points: newStat.points,
         medals: newStat.medals,
         records: newStat.records,
         events: newStat.events,
-        top_performer: newStat.top_performer
+        top_performer: newStat.top_performer || null
       };
 
       const { data, error } = await supabase
@@ -99,15 +123,13 @@ const StatsPage = () => {
 
       if (error) throw error;
 
-      setStats([...(data as StatData[]), ...stats]);
-
       toast({
         title: "Success",
         description: "Stat added successfully.",
       });
 
       setNewStat({
-        title: "",
+        team_name: "",
         wins: undefined,
         losses: undefined,
         points: undefined,
@@ -131,6 +153,33 @@ const StatsPage = () => {
     }
   };
 
+  const handleDeleteStat = async (teamName: string) => {
+    if (!confirm("Are you sure you want to delete this stat?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('stats')
+        .delete()
+        .eq('team_name', teamName);
+      
+      if (error) throw error;
+      
+      setStats(stats.filter(stat => stat.team_name !== teamName));
+      
+      toast({
+        title: "Success",
+        description: "Stat deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting stat:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete stat.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex items-center justify-between mb-10">
@@ -151,14 +200,19 @@ const StatsPage = () => {
             </DialogHeader>
             <form onSubmit={handleAddStat} className="space-y-4">
               <div className="grid gap-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={newStat.title}
-                  onChange={(e) => setNewStat({ ...newStat, title: e.target.value })}
-                  placeholder="Statistic Title"
-                  required
-                />
+                <Label htmlFor="team_name">Team</Label>
+                <Select value={newStat.team_name} onValueChange={(value) => setNewStat({ ...newStat, team_name: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map((team) => (
+                      <SelectItem key={team.team_name} value={team.team_name}>
+                        {team.team_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid gap-2">
@@ -168,74 +222,79 @@ const StatsPage = () => {
                   value={newStat.top_performer}
                   onChange={(e) => setNewStat({ ...newStat, top_performer: e.target.value })}
                   placeholder="Top Performer"
-                  required
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="wins">Wins</Label>
-                <Input
-                  type="number"
-                  id="wins"
-                  value={newStat.wins === undefined ? '' : newStat.wins.toString()}
-                  onChange={(e) => setNewStat({ ...newStat, wins: e.target.value ? parseInt(e.target.value) : undefined })}
-                  placeholder="Wins"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="wins">Wins</Label>
+                  <Input
+                    type="number"
+                    id="wins"
+                    value={newStat.wins === undefined ? '' : newStat.wins.toString()}
+                    onChange={(e) => setNewStat({ ...newStat, wins: e.target.value ? parseInt(e.target.value) : undefined })}
+                    placeholder="Wins"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="losses">Losses</Label>
+                  <Input
+                    type="number"
+                    id="losses"
+                    value={newStat.losses === undefined ? '' : newStat.losses.toString()}
+                    onChange={(e) => setNewStat({ ...newStat, losses: e.target.value ? parseInt(e.target.value) : undefined })}
+                    placeholder="Losses"
+                  />
+                </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="losses">Losses</Label>
-                <Input
-                  type="number"
-                  id="losses"
-                  value={newStat.losses === undefined ? '' : newStat.losses.toString()}
-                  onChange={(e) => setNewStat({ ...newStat, losses: e.target.value ? parseInt(e.target.value) : undefined })}
-                  placeholder="Losses"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="points">Points</Label>
+                  <Input
+                    type="number"
+                    id="points"
+                    value={newStat.points === undefined ? '' : newStat.points.toString()}
+                    onChange={(e) => setNewStat({ ...newStat, points: e.target.value ? parseInt(e.target.value) : undefined })}
+                    placeholder="Points"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="medals">Medals</Label>
+                  <Input
+                    type="number"
+                    id="medals"
+                    value={newStat.medals === undefined ? '' : newStat.medals.toString()}
+                    onChange={(e) => setNewStat({ ...newStat, medals: e.target.value ? parseInt(e.target.value) : undefined })}
+                    placeholder="Medals"
+                  />
+                </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="points">Points</Label>
-                <Input
-                  type="number"
-                  id="points"
-                  value={newStat.points === undefined ? '' : newStat.points.toString()}
-                  onChange={(e) => setNewStat({ ...newStat, points: e.target.value ? parseInt(e.target.value) : undefined })}
-                  placeholder="Points"
-                />
-              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="records">Records</Label>
+                  <Input
+                    type="number"
+                    id="records"
+                    value={newStat.records === undefined ? '' : newStat.records.toString()}
+                    onChange={(e) => setNewStat({ ...newStat, records: e.target.value ? parseInt(e.target.value) : undefined })}
+                    placeholder="Records"
+                  />
+                </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="medals">Medals</Label>
-                <Input
-                  type="number"
-                  id="medals"
-                  value={newStat.medals === undefined ? '' : newStat.medals.toString()}
-                  onChange={(e) => setNewStat({ ...newStat, medals: e.target.value ? parseInt(e.target.value) : undefined })}
-                  placeholder="Medals"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="records">Records</Label>
-                <Input
-                  type="number"
-                  id="records"
-                  value={newStat.records === undefined ? '' : newStat.records.toString()}
-                  onChange={(e) => setNewStat({ ...newStat, records: e.target.value ? parseInt(e.target.value) : undefined })}
-                  placeholder="Records"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="events">Events</Label>
-                <Input
-                  type="number"
-                  id="events"
-                  value={newStat.events === undefined ? '' : newStat.events.toString()}
-                  onChange={(e) => setNewStat({ ...newStat, events: e.target.value ? parseInt(e.target.value) : undefined })}
-                  placeholder="Events"
-                />
+                <div className="grid gap-2">
+                  <Label htmlFor="events">Events</Label>
+                  <Input
+                    type="number"
+                    id="events"
+                    value={newStat.events === undefined ? '' : newStat.events.toString()}
+                    onChange={(e) => setNewStat({ ...newStat, events: e.target.value ? parseInt(e.target.value) : undefined })}
+                    placeholder="Events"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end">
@@ -259,9 +318,19 @@ const StatsPage = () => {
       ) : stats.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {stats.map((stat) => (
-            <Card key={stat.id} className="stats-card hover:shadow-md transition-shadow">
+            <Card key={stat.team_name} className="stats-card hover:shadow-md transition-shadow relative">
               <CardContent className="p-6">
-                <h3 className="text-xl font-bold text-forest mb-4">{stat.title}</h3>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => handleDeleteStat(stat.team_name)}
+                  className="absolute top-2 right-2 h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-transparent"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">Delete</span>
+                </Button>
+                
+                <h3 className="text-xl font-bold text-forest mb-4 pr-8">{stat.team_name}</h3>
                 <div className="space-y-3">
                   {stat.wins !== null && stat.losses !== null && (
                     <div className="flex justify-between">
@@ -298,10 +367,12 @@ const StatsPage = () => {
                     </div>
                   )}
 
-                  <div className="flex justify-between pt-2 border-t">
-                    <span className="text-gray-600">Top Performer:</span>
-                    <span className="font-semibold">{stat.top_performer}</span>
-                  </div>
+                  {stat.top_performer && (
+                    <div className="flex justify-between pt-2 border-t">
+                      <span className="text-gray-600">Top Performer:</span>
+                      <span className="font-semibold">{stat.top_performer}</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -1,89 +1,147 @@
 
-import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus } from "lucide-react";
-import ImageUpload from "./ImageUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-const athleteFormSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  sport: z.string().min(2, { message: "Sport is required" }),
-  course: z.string().min(2, { message: "Course is required" }),
-  year: z.string().min(1, { message: "Year is required" }),
-  position: z.string().min(2, { message: "Position is required" }),
-  hometown: z.string().min(2, { message: "Hometown is required" }),
-  achievements: z.string().optional(),
-  image_url: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal(''))
-});
-
-type AthleteFormValues = z.infer<typeof athleteFormSchema>;
+type Team = {
+  team_name: string;
+  sport: string;
+  coach_name: string;
+};
 
 const AddAthleteForm = () => {
+  const [open, setOpen] = useState(false);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
-  
-  const form = useForm<AthleteFormValues>({
-    resolver: zodResolver(athleteFormSchema),
-    defaultValues: {
-      name: "",
-      sport: "",
-      course: "",
-      year: "",
-      position: "",
-      hometown: "",
-      achievements: "",
-      image_url: ""
-    }
+  const [formData, setFormData] = useState({
+    student_id: "",
+    fname: "",
+    mname: "",
+    lname: "",
+    birthdate: "",
+    hometown: "",
+    email: "",
+    phone_number: "",
+    department: "",
+    course: "",
+    year_level: "",
+    block: "",
+    team_name: "",
   });
 
-  const handleImageSelected = (url: string) => {
-    setImageUrl(url);
-    form.setValue("image_url", url);
+  const fetchTeams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('team')
+        .select('*')
+        .order('team_name');
+      
+      if (error) throw error;
+      
+      setTeams(data as Team[]);
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load teams.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const onSubmit = async (values: AthleteFormValues) => {
+  useEffect(() => {
+    if (open) {
+      fetchTeams();
+    }
+  }, [open]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.student_id || !formData.fname || !formData.lname) {
+      toast({
+        title: "Error",
+        description: "Student ID, First Name, and Last Name are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
+    
     try {
+      const athleteData = {
+        student_id: parseInt(formData.student_id),
+        fname: formData.fname,
+        mname: formData.mname || null,
+        lname: formData.lname,
+        birthdate: formData.birthdate || null,
+        hometown: formData.hometown || null,
+        email: formData.email || null,
+        phone_number: formData.phone_number || null,
+        department: formData.department || null,
+        course: formData.course || null,
+        year_level: formData.year_level ? parseInt(formData.year_level) : null,
+        block: formData.block || null,
+        team_name: formData.team_name || null,
+      };
+
       const { error } = await supabase
-        .from('athletes')
-        .insert([{
-          name: values.name,
-          sport: values.sport,
-          course: values.course,
-          year: values.year,
-          position: values.position,
-          hometown: values.hometown,
-          achievements: values.achievements || null,
-          image_url: imageUrl || null
-        }]);
+        .from('athlete')
+        .insert([athleteData]);
       
       if (error) throw error;
       
       toast({
-        title: "Success!",
-        description: `${values.name} was added to athletes.`,
+        title: "Success",
+        description: "Athlete added successfully.",
       });
       
-      form.reset();
-      setImageUrl("");
-      setIsOpen(false);
+      // Reset form
+      setFormData({
+        student_id: "",
+        fname: "",
+        mname: "",
+        lname: "",
+        birthdate: "",
+        hometown: "",
+        email: "",
+        phone_number: "",
+        department: "",
+        course: "",
+        year_level: "",
+        block: "",
+        team_name: "",
+      });
+      setOpen(false);
       
-      // Force reload the page to show the new athlete
+      // Refresh the page to show new athlete
       window.location.reload();
     } catch (error) {
-      console.error('Error adding athlete:', error);
+      console.error("Error adding athlete:", error);
       toast({
         title: "Error",
-        description: "Failed to add athlete. Please try again.",
+        description: "Failed to add athlete.",
         variant: "destructive",
       });
     } finally {
@@ -91,150 +149,187 @@ const AddAthleteForm = () => {
     }
   };
 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         <Button className="bg-maroon hover:bg-maroon/90">
-          <Plus className="mr-2 h-4 w-4" /> Add Athlete
+          <Plus className="mr-2 h-4 w-4" />
+          Add Athlete
         </Button>
-      </SheetTrigger>
-      <SheetContent className="overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="text-2xl font-bold text-maroon">Add New Athlete</SheetTitle>
-        </SheetHeader>
-        
-        <div className="mt-6">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add New Athlete</DialogTitle>
+          <DialogDescription>
+            Fill in the athlete's information below.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="student_id">Student ID *</Label>
+              <Input
+                id="student_id"
+                type="number"
+                placeholder="e.g., 2021001"
+                value={formData.student_id}
+                onChange={(e) => handleInputChange("student_id", e.target.value)}
+                required
               />
-              
-              <FormField
-                control={form.control}
-                name="sport"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sport</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Basketball" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="team_name">Team</Label>
+              <Select value={formData.team_name} onValueChange={(value) => handleInputChange("team_name", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a team" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teams.map((team) => (
+                    <SelectItem key={team.team_name} value={team.team_name}>
+                      {team.team_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fname">First Name *</Label>
+              <Input
+                id="fname"
+                placeholder="Juan"
+                value={formData.fname}
+                onChange={(e) => handleInputChange("fname", e.target.value)}
+                required
               />
-              
-              <FormField
-                control={form.control}
-                name="course"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Course</FormLabel>
-                    <FormControl>
-                      <Input placeholder="BS Computer Science" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mname">Middle Name</Label>
+              <Input
+                id="mname"
+                placeholder="Miguel"
+                value={formData.mname}
+                onChange={(e) => handleInputChange("mname", e.target.value)}
               />
-              
-              <FormField
-                control={form.control}
-                name="year"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Year</FormLabel>
-                    <FormControl>
-                      <Input placeholder="4th Year" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lname">Last Name *</Label>
+              <Input
+                id="lname"
+                placeholder="Cruz"
+                value={formData.lname}
+                onChange={(e) => handleInputChange("lname", e.target.value)}
+                required
               />
-              
-              <FormField
-                control={form.control}
-                name="position"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Position</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Point Guard" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="birthdate">Birthdate</Label>
+              <Input
+                id="birthdate"
+                type="date"
+                value={formData.birthdate}
+                onChange={(e) => handleInputChange("birthdate", e.target.value)}
               />
-              
-              <FormField
-                control={form.control}
-                name="hometown"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hometown</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Cebu City" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="hometown">Hometown</Label>
+              <Input
+                id="hometown"
+                placeholder="Cebu City"
+                value={formData.hometown}
+                onChange={(e) => handleInputChange("hometown", e.target.value)}
               />
-              
-              <FormField
-                control={form.control}
-                name="achievements"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Achievements</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="MVP 2023, All-Star 2022" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="juan.cruz@up.edu.ph"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
               />
-              
-              <FormField
-                control={form.control}
-                name="image_url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Athlete Image</FormLabel>
-                    <FormControl>
-                      <ImageUpload 
-                        onImageSelected={handleImageSelected} 
-                        initialImage={field.value}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone_number">Phone Number</Label>
+              <Input
+                id="phone_number"
+                placeholder="09171234567"
+                value={formData.phone_number}
+                onChange={(e) => handleInputChange("phone_number", e.target.value)}
               />
-              
-              <div className="pt-4">
-                <Button 
-                  type="submit" 
-                  className="w-full bg-maroon hover:bg-maroon/90"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Adding Athlete..." : "Add Athlete"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </div>
-      </SheetContent>
-    </Sheet>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Input
+                id="department"
+                placeholder="CAS"
+                value={formData.department}
+                onChange={(e) => handleInputChange("department", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="course">Course</Label>
+              <Input
+                id="course"
+                placeholder="BS Math"
+                value={formData.course}
+                onChange={(e) => handleInputChange("course", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="year_level">Year Level</Label>
+              <Input
+                id="year_level"
+                type="number"
+                min="1"
+                max="5"
+                placeholder="3"
+                value={formData.year_level}
+                onChange={(e) => handleInputChange("year_level", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="block">Block</Label>
+              <Input
+                id="block"
+                placeholder="A"
+                maxLength={1}
+                value={formData.block}
+                onChange={(e) => handleInputChange("block", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" className="bg-maroon hover:bg-maroon/90" disabled={isSubmitting}>
+              {isSubmitting ? "Adding..." : "Add Athlete"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 
