@@ -167,8 +167,8 @@ const SportAthletes = () => {
               </Card>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
