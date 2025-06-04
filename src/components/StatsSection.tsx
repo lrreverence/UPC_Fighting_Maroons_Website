@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 type Stat = {
-  team_name: string;
+  team_id: string;
+  team_name?: string; // Keep for display purposes
   top_performer?: string;
   wins?: number;
   losses?: number;
@@ -21,19 +22,29 @@ type Stat = {
 const StatsSection = () => {
   const [stats, setStats] = useState<Stat[]>([]);
   const [loading, setLoading] = useState(true);
-
   const fetchStats = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('stats')
-        .select('*')
-        .order('team_name')
+        .select(`
+          *,
+          team:team_id (
+            team_name
+          )
+        `)
+        .order('team_id')
         .limit(4);
       
       if (error) throw error;
       
-      setStats(data as Stat[]);
+      // Transform data to include team_name
+      const transformedStats = data?.map((stat: any) => ({
+        ...stat,
+        team_name: stat.team?.team_name
+      })) || [];
+      
+      setStats(transformedStats);
     } catch (error) {
       console.error("Error fetching stats:", error);
       toast({
@@ -75,10 +86,9 @@ const StatsSection = () => {
             <Link to="/stats">View All Stats</Link>
           </Button>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat) => (
-            <Card key={stat.team_name} className="stats-card hover:shadow-md transition-shadow">
+            <Card key={stat.team_id} className="stats-card hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <h3 className="text-lg font-bold text-forest mb-4">{stat.team_name}</h3>
                 <div className="space-y-3">
