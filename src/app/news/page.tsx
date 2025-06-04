@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Newspaper as NewsIcon, Trash2, Plus } from "lucide-react";
+import { Newspaper as NewsIcon, Trash2, Plus, Edit } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -38,10 +38,11 @@ type NewsFormValues = {
   reference_link?: string;
 }
 
-export default function NewsPage() {
-  const [allNews, setAllNews] = useState<NewsItem[]>([]);
+export default function NewsPage() {  const [allNews, setAllNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingNews, setEditingNews] = useState<NewsItem | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const { register, handleSubmit, reset, setValue } = useForm<NewsFormValues>();
 
@@ -132,8 +133,7 @@ export default function NewsPage() {
         description: "News item added successfully.",
       });
     } catch (error) {
-      console.error("Error adding news:", error);
-      toast({
+      console.error("Error adding news:", error);      toast({
         title: "Error",
         description: "Failed to add news item.",
         variant: "destructive",
@@ -141,11 +141,68 @@ export default function NewsPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-grow bg-gray-50 py-16">
-        <div className="container mx-auto px-6">
-          <div className="flex items-center justify-between mb-10">
+  const handleEditNews = (news: NewsItem) => {
+    setEditingNews(news);
+    setImageUrl(news.image);
+    
+    // Pre-populate the form with existing values
+    setValue("title", news.title);
+    setValue("excerpt", news.excerpt);
+    setValue("category", news.category);
+    setValue("date", news.date);
+    setValue("image", news.image);
+    setValue("reference_link", news.reference_link || "");
+    
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateNews = async (data: NewsFormValues) => {
+    if (!editingNews) return;
+    
+    try {
+      // Format date in standard format
+      const formattedDate = data.date ? data.date : new Date().toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
+      const { error } = await supabase
+        .from('news')
+        .update({
+          title: data.title,
+          excerpt: data.excerpt,
+          category: data.category,
+          date: formattedDate,
+          image: imageUrl || editingNews.image,
+          reference_link: data.reference_link || null
+        })
+        .eq('id', editingNews.id);
+      
+      if (error) throw error;
+      
+      setIsEditDialogOpen(false);
+      setEditingNews(null);
+      reset();
+      setImageUrl("");
+      fetchNews(); // Refresh the list
+      toast({
+        title: "Success",
+        description: "News item updated successfully.",
+      });
+    } catch (error) {
+      console.error("Error updating news:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update news item.",
+        variant: "destructive",
+      });
+    }
+  };  return (
+    <div className="h-screen flex flex-col overflow-hidden">
+      <main className="flex-grow bg-gray-50 py-8 overflow-y-auto scroll-smooth custom-scrollbar">
+        <div className="container mx-auto px-6 max-w-7xl min-h-full">
+          <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <NewsIcon className="h-8 w-8 text-maroon" />
               <h1 className="text-4xl font-bold text-maroon">All News</h1>
@@ -158,7 +215,7 @@ export default function NewsPage() {
                   Add News
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[525px]">
+              <DialogContent className="sm:max-w-[525px] max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <DialogHeader>
                   <DialogTitle>Add New News Item</DialogTitle>
                   <DialogDescription>
@@ -231,9 +288,8 @@ export default function NewsPage() {
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <div className="h-8 w-8 border-4 border-maroon border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
               {allNews.map((news) => (
                 <Card key={news.id} className="flex flex-col overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="h-48 overflow-hidden">
@@ -269,8 +325,15 @@ export default function NewsPage() {
                           className="text-forest font-medium text-sm hover:underline"
                         >
                           Read more
-                        </Link>
-                      )}
+                        </Link>                      )}
+                      <Button
+                        variant="ghost" 
+                        size="sm"
+                        className="text-blue-500 p-0 h-auto"
+                        onClick={() => handleEditNews(news)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost" 
                         size="sm"
@@ -282,11 +345,81 @@ export default function NewsPage() {
                     </div>
                   </CardFooter>
                 </Card>
-              ))}
-            </div>
+              ))}            </div>
           )}
         </div>
       </main>
+        {/* Edit News Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[525px] max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <DialogHeader>
+            <DialogTitle>Edit News Item</DialogTitle>
+            <DialogDescription>
+              Update the details for the news item.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(handleUpdateNews)} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <label htmlFor="edit-title" className="text-sm font-medium">Title</label>
+              <Input
+                id="edit-title"
+                placeholder="News title"
+                {...register("title", { required: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="edit-excerpt" className="text-sm font-medium">Excerpt</label>
+              <Textarea
+                id="edit-excerpt"
+                placeholder="Brief description of the news"
+                {...register("excerpt", { required: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="edit-category" className="text-sm font-medium">Category</label>
+              <Input
+                id="edit-category"
+                placeholder="e.g., Basketball, Swimming"
+                {...register("category", { required: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="edit-date" className="text-sm font-medium">Date (Optional)</label>
+              <Input
+                id="edit-date"
+                placeholder="e.g., May 15, 2025"
+                {...register("date")}
+              />
+              <p className="text-xs text-gray-500">Leave empty to use today's date</p>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="edit-image" className="text-sm font-medium">News Image</label>
+              <ImageUpload 
+                onImageSelected={handleImageSelected}
+                initialImage={imageUrl}
+                bucketName="news-images"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="edit-reference_link" className="text-sm font-medium">Reference Link</label>
+              <Input
+                id="edit-reference_link"
+                placeholder="https://example.com/news-source"
+                {...register("reference_link")}
+              />
+              <p className="text-xs text-gray-500">Link to the original news source</p>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-forest hover:bg-forest-dark">
+                Update News
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
