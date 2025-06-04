@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -15,9 +16,25 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Search, User, Trash2 } from "lucide-react";
+import { Search, User, Trash2, Edit } from "lucide-react";
+import ImageUpload from "./ImageUpload";
 
 type Athlete = {
   student_id: number;
@@ -36,12 +53,38 @@ type Athlete = {
   image_url?: string;
 };
 
+type Team = {
+  team_name: string;
+  sport: string;
+  coach_name: string;
+};
+
 const AthletesList = () => {
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [filteredAthletes, setFilteredAthletes] = useState<Athlete[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState("");
+  const [editFormData, setEditFormData] = useState({
+    student_id: "",
+    fname: "",
+    mname: "",
+    lname: "",
+    birthdate: "",
+    hometown: "",
+    email: "",
+    phone_number: "",
+    department: "",
+    course: "",
+    year_level: "",
+    block: "",
+    team_name: "",
+  });
 
   const fetchAthletes = async () => {
     try {
@@ -67,7 +110,6 @@ const AthletesList = () => {
       setLoading(false);
     }
   };
-
   const deleteAthlete = async (studentId: number) => {
     try {
       setDeletingId(studentId);
@@ -111,8 +153,131 @@ const AthletesList = () => {
     }
   };
 
+  const fetchTeams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('team')
+        .select('*')
+        .order('team_name');
+      
+      if (error) throw error;
+      
+      setTeams(data || []);
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+    }
+  };  const handleEditAthlete = (athlete: Athlete) => {
+    // Set the editing athlete first
+    setEditingAthlete(athlete);
+    
+    // Set the image URL
+    setSelectedImageUrl(athlete.image_url || "");
+      // Set form data
+    setEditFormData({
+      student_id: athlete.student_id?.toString() || "",
+      fname: athlete.fname || "",
+      mname: athlete.mname || "",
+      lname: athlete.lname || "",
+      birthdate: athlete.birthdate || "",
+      hometown: athlete.hometown || "",
+      email: athlete.email || "",
+      phone_number: athlete.phone_number || "",
+      department: athlete.department || "",
+      course: athlete.course || "",
+      year_level: athlete.year_level?.toString() || "",
+      block: athlete.block || "",
+      team_name: athlete.team_name || "",
+    });    
+    // Open the dialog
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateAthlete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAthlete) return;
+
+    try {
+      setIsSubmitting(true);
+      
+      const updateData = {
+        fname: editFormData.fname,
+        mname: editFormData.mname || null,
+        lname: editFormData.lname,
+        birthdate: editFormData.birthdate || null,
+        hometown: editFormData.hometown || null,
+        email: editFormData.email || null,
+        phone_number: editFormData.phone_number || null,
+        department: editFormData.department || null,
+        course: editFormData.course || null,
+        year_level: editFormData.year_level ? parseInt(editFormData.year_level) : null,
+        block: editFormData.block || null,
+        team_name: editFormData.team_name || null,
+        image_url: selectedImageUrl || null,
+      };
+
+      const { error } = await supabase
+        .from('athlete')
+        .update(updateData)
+        .eq('student_id', editingAthlete.student_id);
+
+      if (error) throw error;
+
+      // Update local state
+      const updatedAthletes = athletes.map(athlete =>
+        athlete.student_id === editingAthlete.student_id
+          ? { ...athlete, ...updateData }
+          : athlete
+      );
+      setAthletes(updatedAthletes);
+      
+      // Apply search filter to updated athletes
+      const filtered = updatedAthletes.filter(athlete => {
+        const fullName = `${athlete.fname} ${athlete.mname || ''} ${athlete.lname}`.toLowerCase();
+        const searchLower = searchTerm.toLowerCase();
+        
+        return (
+          fullName.includes(searchLower) ||
+          athlete.team_name?.toLowerCase().includes(searchLower) ||
+          athlete.course?.toLowerCase().includes(searchLower) ||
+          athlete.department?.toLowerCase().includes(searchLower) ||
+          athlete.student_id.toString().includes(searchTerm)
+        );
+      });
+      setFilteredAthletes(filtered);
+
+      setIsEditDialogOpen(false);
+      setEditingAthlete(null);
+      setSelectedImageUrl("");
+      
+      toast({
+        title: "Success",
+        description: "Athlete updated successfully.",
+      });
+    } catch (error) {
+      console.error("Error updating athlete:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update athlete. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleImageSelected = (url: string) => {
+    setSelectedImageUrl(url);
+  };
   useEffect(() => {
     fetchAthletes();
+    fetchTeams();
   }, []);
 
   useEffect(() => {
@@ -170,9 +335,16 @@ const AthletesList = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAthletes.map((athlete) => (
             <Card key={athlete.student_id} className="overflow-hidden hover:shadow-lg transition-shadow relative">
-              <CardContent className="p-6">
-                {/* Delete button */}
-                <div className="absolute top-4 right-4">
+              <CardContent className="p-6">                {/* Edit and Delete buttons */}
+                <div className="absolute top-4 right-4 flex gap-2">                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"                    onClick={() => {
+                      handleEditAthlete(athlete);
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
@@ -241,9 +413,195 @@ const AthletesList = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          ))}        </div>
+      )}      {/* Edit Dialog */}<Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Athlete</DialogTitle>
+            <DialogDescription>
+              Update the athlete's information below.
+            </DialogDescription>
+          </DialogHeader>
+          {editingAthlete && (
+            <form onSubmit={handleUpdateAthlete} className="space-y-4">              {/* Image Upload Section */}
+              <div className="space-y-2">
+                <Label>Athlete Photo</Label>
+                {editingAthlete && (
+                  <ImageUpload 
+                    onImageSelected={handleImageSelected}
+                    initialImage={selectedImageUrl || ""}
+                    bucketName="athlete-images"
+                  />
+                )}
+              </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-student_id">Student ID *</Label>
+                <Input
+                  id="edit-student_id"
+                  type="number"
+                  placeholder="e.g., 2021001"
+                  value={editFormData.student_id}
+                  onChange={(e) => handleInputChange("student_id", e.target.value)}
+                  disabled
+                />
+              </div>              <div className="space-y-2">
+                <Label htmlFor="edit-team_name">Team</Label>                <Select 
+                  value={editFormData.team_name || "no-team"} 
+                  onValueChange={(value) => handleInputChange("team_name", value === "no-team" ? "" : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no-team">No Team</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team.team_name} value={team.team_name}>
+                        {team.team_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-fname">First Name *</Label>
+                <Input
+                  id="edit-fname"
+                  placeholder="Juan"
+                  value={editFormData.fname}
+                  onChange={(e) => handleInputChange("fname", e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-mname">Middle Name</Label>
+                <Input
+                  id="edit-mname"
+                  placeholder="Miguel"
+                  value={editFormData.mname}
+                  onChange={(e) => handleInputChange("mname", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-lname">Last Name *</Label>
+                <Input
+                  id="edit-lname"
+                  placeholder="Cruz"
+                  value={editFormData.lname}
+                  onChange={(e) => handleInputChange("lname", e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-birthdate">Birthdate</Label>
+                <Input
+                  id="edit-birthdate"
+                  type="date"
+                  value={editFormData.birthdate}
+                  onChange={(e) => handleInputChange("birthdate", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-hometown">Hometown</Label>
+                <Input
+                  id="edit-hometown"
+                  placeholder="Cebu City"
+                  value={editFormData.hometown}
+                  onChange={(e) => handleInputChange("hometown", e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  placeholder="juan.cruz@up.edu.ph"
+                  value={editFormData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone_number">Phone Number</Label>
+                <Input
+                  id="edit-phone_number"
+                  placeholder="09171234567"
+                  value={editFormData.phone_number}
+                  onChange={(e) => handleInputChange("phone_number", e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-department">Department</Label>
+                <Input
+                  id="edit-department"
+                  placeholder="CAS"
+                  value={editFormData.department}
+                  onChange={(e) => handleInputChange("department", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-course">Course</Label>
+                <Input
+                  id="edit-course"
+                  placeholder="BS Math"
+                  value={editFormData.course}
+                  onChange={(e) => handleInputChange("course", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-year_level">Year Level</Label>
+                <Input
+                  id="edit-year_level"
+                  type="number"
+                  min="1"
+                  max="5"
+                  placeholder="3"
+                  value={editFormData.year_level}
+                  onChange={(e) => handleInputChange("year_level", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-block">Block</Label>
+                <Input
+                  id="edit-block"
+                  placeholder="A"
+                  maxLength={1}
+                  value={editFormData.block}
+                  onChange={(e) => handleInputChange("block", e.target.value)}
+                />
+              </div>
+            </div>            <DialogFooter>              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setIsEditDialogOpen(false);
+                  setEditingAthlete(null);
+                  setSelectedImageUrl("");
+                }} 
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-maroon hover:bg-maroon/90" disabled={isSubmitting || !editFormData.fname || !editFormData.lname}>
+                {isSubmitting ? "Updating..." : "Update Athlete"}
+              </Button>
+            </DialogFooter>
+          </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
