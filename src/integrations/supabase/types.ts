@@ -101,7 +101,7 @@ export type Database = {
           venue?: string
         }
         Relationships: []
-      }
+      }      
       news: {
         Row: {
           category: string
@@ -110,6 +110,7 @@ export type Database = {
           excerpt: string
           id: string
           image: string
+          reference_link: string | null
           title: string
         }
         Insert: {
@@ -119,6 +120,7 @@ export type Database = {
           excerpt: string
           id?: string
           image: string
+          reference_link?: string | null
           title: string
         }
         Update: {
@@ -128,6 +130,7 @@ export type Database = {
           excerpt?: string
           id?: string
           image?: string
+          reference_link?: string | null
           title?: string
         }
         Relationships: []

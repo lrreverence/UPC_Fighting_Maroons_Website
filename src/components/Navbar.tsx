@@ -17,7 +17,7 @@ const Navbar = () => {
           <Link to="/" className="flex items-center space-x-2 group">
             <div className="w-12 h-12 flex items-center justify-center">
               <img 
-                src="/uploads/29b19ee1-3d5a-4c33-847d-777900e20bfc.png" 
+                src="/uploads/icon.png" 
                 alt="Fighting Maroons Logo" 
                 className="w-full h-full object-contain"
               />
