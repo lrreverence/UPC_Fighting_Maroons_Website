@@ -115,24 +115,28 @@ const AthletesList = () => {
           {filteredAthletes.map((athlete) => (
             <Card key={athlete.student_id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <Avatar className="h-16 w-16">
+                {/* Larger athlete photo at the top */}
+                <div className="flex justify-center mb-6">
+                  <Avatar className="h-32 w-32 ring-4 ring-maroon/20">
                     <AvatarImage 
                       src={athlete.image_url || ""} 
                       alt={`${athlete.fname} ${athlete.lname}`}
+                      className="object-cover"
                     />
-                    <AvatarFallback className="bg-maroon text-white">
-                      <User className="h-8 w-8" />
+                    <AvatarFallback className="bg-maroon text-white text-2xl">
+                      <User className="h-16 w-16" />
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <h3 className="text-xl font-bold">
-                      {athlete.fname} {athlete.mname ? `${athlete.mname} ` : ''}{athlete.lname}
-                    </h3>
-                    {athlete.team_name && (
-                      <p className="text-sm text-maroon font-medium">{athlete.team_name}</p>
-                    )}
-                  </div>
+                </div>
+                
+                {/* Athlete name and team */}
+                <div className="text-center mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    {athlete.fname} {athlete.mname ? `${athlete.mname} ` : ''}{athlete.lname}
+                  </h3>
+                  {athlete.team_name && (
+                    <p className="text-sm text-maroon font-medium">{athlete.team_name}</p>
+                  )}
                 </div>
                 
                 <div className="space-y-2 text-sm text-gray-600">
