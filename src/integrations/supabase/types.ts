@@ -101,7 +101,7 @@ export type Database = {
           venue?: string
         }
         Relationships: []
-      }      
+      }
       news: {
         Row: {
           category: string
@@ -173,38 +173,6 @@ export type Database = {
           wins?: number | null
         }
         Relationships: []
-      }
-      stats_details: {
-        Row: {
-          created_at: string
-          id: string
-          key: string
-          stats_id: string | null
-          value: number
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          key: string
-          stats_id?: string | null
-          value: number
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          key?: string
-          stats_id?: string | null
-          value?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stats_details_stats_id_fkey"
-            columns: ["stats_id"]
-            isOneToOne: false
-            referencedRelation: "stats"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {
