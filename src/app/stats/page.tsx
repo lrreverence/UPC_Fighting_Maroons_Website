@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart as BarChartIcon, Loader2, Plus, Trash2 } from "lucide-react";
@@ -103,7 +102,8 @@ const StatsPage = () => {
   }, []);
 
   const handleAddStat = async (e: React.FormEvent) => {
-    e.preventDefault();    if (!newStat.team_id) {
+    e.preventDefault();
+    if (!newStat.team_id) {
       toast({
         title: "Error",
         description: "Team selection is required.",
@@ -125,17 +125,37 @@ const StatsPage = () => {
         top_performer: newStat.top_performer || null
       };
 
-      const { data, error } = await supabase
+      // Check if stats already exist for this team
+      const { data: existingStats, error: checkError } = await supabase
         .from('stats')
-        .insert([statToSubmit])
-        .select();
+        .select('*')
+        .eq('team_id', newStat.team_id)
+        .single();
 
-      if (error) throw error;
+      let result;
+      if (existingStats) {
+        // Update existing stats
+        result = await supabase
+          .from('stats')
+          .update(statToSubmit)
+          .eq('team_id', newStat.team_id)
+          .select();
+      } else {
+        // Insert new stats
+        result = await supabase
+          .from('stats')
+          .insert([statToSubmit])
+          .select();
+      }
+
+      if (result.error) throw result.error;
 
       toast({
         title: "Success",
-        description: "Stat added successfully.",
-      });      setNewStat({
+        description: existingStats ? "Stats updated successfully." : "Stats added successfully.",
+      });
+
+      setNewStat({
         team_id: "",
         wins: undefined,
         losses: undefined,
@@ -149,11 +169,11 @@ const StatsPage = () => {
       setOpen(false);
       fetchStats();
     } catch (error) {
-      console.error('Error adding stat:', error);
+      console.error('Error adding/updating stat:', error);
       toast({
         variant: "destructive",
-        title: "Error adding stat",
-        description: "There was a problem adding the statistic."
+        title: "Error",
+        description: "There was a problem saving the statistics."
       });
     } finally {
       setIsSubmitting(false);
