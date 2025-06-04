@@ -1,9 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { User } from "lucide-react";
 
 type Athlete = {
   student_id: number;
@@ -19,6 +20,7 @@ type Athlete = {
   year_level?: number;
   block?: string;
   team_name?: string;
+  image_url?: string;
 };
 
 type Team = {
@@ -147,13 +149,28 @@ const SportAthletes = () => {
             {athletes.map((athlete) => (
               <Card key={athlete.student_id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
-                  <h3 className="text-xl font-bold mb-4">
-                    {athlete.fname} {athlete.mname ? `${athlete.mname} ` : ''}{athlete.lname}
-                  </h3>
+                  <div className="flex items-center gap-4 mb-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage 
+                        src={athlete.image_url || ""} 
+                        alt={`${athlete.fname} ${athlete.lname}`}
+                      />
+                      <AvatarFallback className="bg-maroon text-white">
+                        <User className="h-8 w-8" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-xl font-bold">
+                        {athlete.fname} {athlete.mname ? `${athlete.mname} ` : ''}{athlete.lname}
+                      </h3>
+                      {athlete.team_name && (
+                        <p className="text-sm text-maroon font-medium">{athlete.team_name}</p>
+                      )}
+                    </div>
+                  </div>
                   
                   <div className="space-y-2 text-sm text-gray-600">
                     <p><strong>Student ID:</strong> {athlete.student_id}</p>
-                    {athlete.team_name && <p><strong>Team:</strong> {athlete.team_name}</p>}
                     {athlete.course && <p><strong>Course:</strong> {athlete.course}</p>}
                     {athlete.year_level && <p><strong>Year:</strong> {athlete.year_level}</p>}
                     {athlete.department && <p><strong>Department:</strong> {athlete.department}</p>}

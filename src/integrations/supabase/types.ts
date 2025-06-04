@@ -47,6 +47,7 @@ export type Database = {
           email: string | null
           fname: string
           hometown: string | null
+          image_url: string | null
           lname: string
           mname: string | null
           phone_number: string | null
@@ -62,6 +63,7 @@ export type Database = {
           email?: string | null
           fname: string
           hometown?: string | null
+          image_url?: string | null
           lname: string
           mname?: string | null
           phone_number?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           email?: string | null
           fname?: string
           hometown?: string | null
+          image_url?: string | null
           lname?: string
           mname?: string | null
           phone_number?: string | null

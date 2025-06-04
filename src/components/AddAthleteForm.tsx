@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +21,7 @@ import {
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import ImageUpload from "./ImageUpload";
 
 type Team = {
   team_name: string;
@@ -33,6 +33,7 @@ const AddAthleteForm = () => {
   const [open, setOpen] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState("");
   const [formData, setFormData] = useState({
     student_id: "",
     fname: "",
@@ -104,6 +105,7 @@ const AddAthleteForm = () => {
         year_level: formData.year_level ? parseInt(formData.year_level) : null,
         block: formData.block || null,
         team_name: formData.team_name || null,
+        image_url: selectedImageUrl || null,
       };
 
       const { error } = await supabase
@@ -133,6 +135,7 @@ const AddAthleteForm = () => {
         block: "",
         team_name: "",
       });
+      setSelectedImageUrl("");
       setOpen(false);
       
       // Refresh the page to show new athlete
@@ -156,6 +159,10 @@ const AddAthleteForm = () => {
     }));
   };
 
+  const handleImageSelected = (url: string) => {
+    setSelectedImageUrl(url);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -172,6 +179,15 @@ const AddAthleteForm = () => {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Image Upload Section */}
+          <div className="space-y-2">
+            <Label>Athlete Photo</Label>
+            <ImageUpload 
+              onImageSelected={handleImageSelected}
+              bucketName="athlete-images"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="student_id">Student ID *</Label>
