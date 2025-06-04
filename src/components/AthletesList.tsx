@@ -3,9 +3,21 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Search, User } from "lucide-react";
+import { Search, User, Trash2 } from "lucide-react";
 
 type Athlete = {
   student_id: number;
@@ -29,6 +41,7 @@ const AthletesList = () => {
   const [filteredAthletes, setFilteredAthletes] = useState<Athlete[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const fetchAthletes = async () => {
     try {
@@ -52,6 +65,49 @@ const AthletesList = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteAthlete = async (studentId: number) => {
+    try {
+      setDeletingId(studentId);
+      
+      const { error } = await supabase
+        .from('athlete')
+        .delete()
+        .eq('student_id', studentId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      const updatedAthletes = athletes.filter(athlete => athlete.student_id !== studentId);
+      setAthletes(updatedAthletes);
+      setFilteredAthletes(updatedAthletes.filter(athlete => {
+        const fullName = `${athlete.fname} ${athlete.mname || ''} ${athlete.lname}`.toLowerCase();
+        const searchLower = searchTerm.toLowerCase();
+        
+        return (
+          fullName.includes(searchLower) ||
+          athlete.team_name?.toLowerCase().includes(searchLower) ||
+          athlete.course?.toLowerCase().includes(searchLower) ||
+          athlete.department?.toLowerCase().includes(searchLower) ||
+          athlete.student_id.toString().includes(searchTerm)
+        );
+      }));
+      
+      toast({
+        title: "Success",
+        description: "Athlete deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting athlete:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete athlete.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -113,8 +169,41 @@ const AthletesList = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAthletes.map((athlete) => (
-            <Card key={athlete.student_id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card key={athlete.student_id} className="overflow-hidden hover:shadow-lg transition-shadow relative">
               <CardContent className="p-6">
+                {/* Delete button */}
+                <div className="absolute top-4 right-4">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        disabled={deletingId === athlete.student_id}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Athlete</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete {athlete.fname} {athlete.lname}? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteAthlete(athlete.student_id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+
                 {/* Larger athlete photo at the top */}
                 <div className="flex justify-center mb-6">
                   <Avatar className="h-32 w-32 ring-4 ring-maroon/20">
