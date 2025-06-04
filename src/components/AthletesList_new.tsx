@@ -65,11 +65,7 @@ type Filters = {
   hometown: string;
 };
 
-type AthletesListProps = {
-  onProfileViewChange?: (isProfileView: boolean) => void;
-};
-
-const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
+const AthletesList = () => {
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [filteredAthletes, setFilteredAthletes] = useState<Athlete[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,10 +161,10 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
     });
     setSearchTerm("");
   };
+
   const handleAthleteClick = async (athlete: Athlete) => {
     setSelectedAthlete(athlete);
     setShowProfile(true);
-    onProfileViewChange?.(true);
     await fetchMatchHistory(athlete.student_id);
   };
 
@@ -342,12 +338,12 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
   if (showProfile && selectedAthlete) {
     return (
       <div className="space-y-6">
-        {/* Back button */}        <Button
+        {/* Back button */}
+        <Button
           variant="outline"
           onClick={() => {
             setShowProfile(false);
             setSelectedAthlete(null);
-            onProfileViewChange?.(false);
           }}
           className="flex items-center gap-2"
         >
@@ -542,7 +538,8 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
                               </div>
                               
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                                <p><strong>Date:</strong> {formatMatchDate(match.game_date)}</p>                                <p><strong>Time:</strong> {formatMatchTime(match.start_time)}</p>
+                                <p><strong>Date:</strong> {formatMatchDate(match.game_date)}</p>
+                                <p><strong>Time:</strong> {formatMatchTime(match.start_time)}</p>
                                 {match.opponent_team && <p><strong>Opponent:</strong> {match.opponent_team}</p>}
                                 {match.location && <p><strong>Location:</strong> {match.location}</p>}
                                 {match.team_name && <p><strong>Team:</strong> {match.team_name}</p>}
