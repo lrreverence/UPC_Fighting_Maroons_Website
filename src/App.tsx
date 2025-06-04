@@ -1,3 +1,4 @@
+
 import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
@@ -10,6 +11,7 @@ import FullSchedule from "./pages/FullSchedule";
 import NewsPage from "./app/news/page";
 import StatsPage from "./app/stats/page";
 import AchievementsPage from "./pages/Achievements";
+import SportPage from "./pages/SportPage";
 import Navbar from "./components/Navbar";
 import HomeNavbar from "./components/HomeNavbar";
 import Footer from "./components/Footer";
@@ -31,6 +33,7 @@ const AppContent = () => {
           <Route path="/news" element={<NewsPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/achievements" element={<AchievementsPage />} />
+          <Route path="/sports/:sport" element={<SportPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
