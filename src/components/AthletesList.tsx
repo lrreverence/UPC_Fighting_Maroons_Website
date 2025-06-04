@@ -1,4 +1,3 @@
-// filepath: c:\Users\Glenn Solis\School\Second Year\Second Sem\CMSC 127\127Project\UPC_Fighting_Maroons_Website\src\components\AthletesList.tsx
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
