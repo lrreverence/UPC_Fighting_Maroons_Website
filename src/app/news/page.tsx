@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Newspaper as NewsIcon, Trash2, Plus } from "lucide-react";
@@ -18,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
+import ImageUpload from "@/components/ImageUpload";
 
 type NewsItem = {
   id: string;
@@ -33,13 +33,15 @@ type NewsFormValues = {
   excerpt: string;
   category: string;
   date?: string;
+  image: string;
 }
 
 export default function NewsPage() {
   const [allNews, setAllNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const { register, handleSubmit, reset } = useForm<NewsFormValues>();
+  const [imageUrl, setImageUrl] = useState("");
+  const { register, handleSubmit, reset, setValue } = useForm<NewsFormValues>();
 
   const fetchNews = async () => {
     try {
@@ -92,6 +94,11 @@ export default function NewsPage() {
     }
   };
 
+  const handleImageSelected = (url: string) => {
+    setImageUrl(url);
+    setValue("image", url);
+  };
+
   const handleAddNews = async (data: NewsFormValues) => {
     try {
       // Format date in standard format
@@ -109,7 +116,7 @@ export default function NewsPage() {
             excerpt: data.excerpt,
             category: data.category,
             date: formattedDate,
-            image: '/uploads/29b19ee1-3d5a-4c33-847d-777900e20bfc.png' // Using default image
+            image: imageUrl || '/uploads/29b19ee1-3d5a-4c33-847d-777900e20bfc.png' // Use uploaded image or default
           }
         ]);
       
@@ -117,6 +124,7 @@ export default function NewsPage() {
       
       setIsAddDialogOpen(false);
       reset();
+      setImageUrl("");
       fetchNews(); // Refresh the list
       toast({
         title: "Success",
@@ -189,6 +197,14 @@ export default function NewsPage() {
                       {...register("date")}
                     />
                     <p className="text-xs text-gray-500">Leave empty to use today's date</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="image" className="text-sm font-medium">News Image</label>
+                    <ImageUpload 
+                      onImageSelected={handleImageSelected}
+                      initialImage={imageUrl}
+                      bucketName="news-images"
+                    />
                   </div>
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>

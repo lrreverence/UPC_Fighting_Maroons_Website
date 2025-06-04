@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 interface ImageUploadProps {
   onImageSelected: (url: string) => void;
   initialImage?: string;
+  bucketName?: string;
 }
 
-const ImageUpload = ({ onImageSelected, initialImage }: ImageUploadProps) => {
+const ImageUpload = ({ onImageSelected, initialImage, bucketName = "athlete-images" }: ImageUploadProps) => {
   const [imageUrl, setImageUrl] = useState<string>(initialImage || "");
   const [previewUrl, setPreviewUrl] = useState<string>(initialImage || "");
   const [isLoading, setIsLoading] = useState(false);
@@ -94,7 +94,7 @@ const ImageUpload = ({ onImageSelected, initialImage }: ImageUploadProps) => {
       // Create a unique filename
       const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-      const filePath = `athlete-images/${fileName}`;
+      const filePath = `${fileName}`;
 
       // Create a temporary preview URL
       const objectUrl = URL.createObjectURL(file);
@@ -102,7 +102,7 @@ const ImageUpload = ({ onImageSelected, initialImage }: ImageUploadProps) => {
 
       // Upload file to Supabase Storage
       const { error: uploadError, data } = await supabase.storage
-        .from("athlete-images")
+        .from(bucketName)
         .upload(filePath, file);
 
       if (uploadError) {
@@ -111,7 +111,7 @@ const ImageUpload = ({ onImageSelected, initialImage }: ImageUploadProps) => {
 
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage
-        .from("athlete-images")
+        .from(bucketName)
         .getPublicUrl(filePath);
 
       // Update the state and notify parent
@@ -196,7 +196,7 @@ const ImageUpload = ({ onImageSelected, initialImage }: ImageUploadProps) => {
           <div className="relative w-32 h-32 border rounded-md overflow-hidden">
             <img 
               src={previewUrl} 
-              alt="Athlete preview" 
+              alt="Image preview" 
               className="w-full h-full object-cover"
             />
           </div>
