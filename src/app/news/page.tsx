@@ -26,6 +26,7 @@ type NewsItem = {
   date: string;
   image: string;
   category: string;
+  reference_link?: string | null;
 }
 
 type NewsFormValues = {
@@ -34,6 +35,7 @@ type NewsFormValues = {
   category: string;
   date?: string;
   image: string;
+  reference_link?: string;
 }
 
 export default function NewsPage() {
@@ -106,9 +108,7 @@ export default function NewsPage() {
         month: 'long',
         day: 'numeric',
         year: 'numeric'
-      });
-
-      const { error } = await supabase
+      });      const { error } = await supabase
         .from('news')
         .insert([
           {
@@ -116,7 +116,8 @@ export default function NewsPage() {
             excerpt: data.excerpt,
             category: data.category,
             date: formattedDate,
-            image: imageUrl || '/uploads/29b19ee1-3d5a-4c33-847d-777900e20bfc.png' // Use uploaded image or default
+            image: imageUrl || '/uploads/29b19ee1-3d5a-4c33-847d-777900e20bfc.png', // Use uploaded image or default
+            reference_link: data.reference_link || null
           }
         ]);
       
@@ -197,14 +198,22 @@ export default function NewsPage() {
                       {...register("date")}
                     />
                     <p className="text-xs text-gray-500">Leave empty to use today's date</p>
-                  </div>
-                  <div className="space-y-2">
+                  </div>                  <div className="space-y-2">
                     <label htmlFor="image" className="text-sm font-medium">News Image</label>
                     <ImageUpload 
                       onImageSelected={handleImageSelected}
                       initialImage={imageUrl}
                       bucketName="news-images"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="reference_link" className="text-sm font-medium">Reference Link</label>
+                    <Input
+                      id="reference_link"
+                      placeholder="https://example.com/news-source"
+                      {...register("reference_link")}
+                    />
+                    <p className="text-xs text-gray-500">Link to the original news source</p>
                   </div>
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
@@ -244,15 +253,25 @@ export default function NewsPage() {
                     <p className="text-gray-600 text-sm">{news.excerpt}</p>
                   </CardContent>
                   <CardFooter className="flex justify-between items-center pt-0 border-t border-gray-100">
-                    <span className="text-sm text-gray-500">{news.date}</span>
-                    <div className="flex gap-2 items-center">
-                      <Link 
-                        to={`/news/${news.id}`}
-                        className="text-forest font-medium text-sm hover:underline"
-                      >
-                        Read more
-                      </Link>
-                      <Button 
+                    <span className="text-sm text-gray-500">{news.date}</span>                    <div className="flex gap-2 items-center">
+                      {news.reference_link ? (
+                        <a 
+                          href={news.reference_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-forest font-medium text-sm hover:underline"
+                        >
+                          Read more
+                        </a>
+                      ) : (
+                        <Link 
+                          to={`/news/${news.id}`}
+                          className="text-forest font-medium text-sm hover:underline"
+                        >
+                          Read more
+                        </Link>
+                      )}
+                      <Button
                         variant="ghost" 
                         size="sm"
                         className="text-red-500 p-0 h-auto"

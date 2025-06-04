@@ -13,6 +13,7 @@ type NewsItem = {
   date: string;
   image: string;
   category: string;
+  reference_link?: string | null;
 }
 
 const NewsSection = () => {
@@ -73,15 +74,25 @@ const NewsSection = () => {
                 <CardContent className="flex-grow pt-6">
                   <h3 className="font-bold text-lg mb-2">{news.title}</h3>
                   <p className="text-gray-600 text-sm">{news.excerpt}</p>
-                </CardContent>
-                <CardFooter className="flex justify-between items-center pt-0 border-t border-gray-100">
+                </CardContent>                <CardFooter className="flex justify-between items-center pt-0 border-t border-gray-100">
                   <span className="text-sm text-gray-500">{news.date}</span>
-                  <Link 
-                    to={`/news/${news.id}`}
-                    className="text-forest font-medium text-sm hover:underline"
-                  >
-                    Read more
-                  </Link>
+                  {news.reference_link ? (
+                    <a 
+                      href={news.reference_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-forest font-medium text-sm hover:underline"
+                    >
+                      Read more
+                    </a>
+                  ) : (
+                    <Link 
+                      to={`/news/${news.id}`}
+                      className="text-forest font-medium text-sm hover:underline"
+                    >
+                      Read more
+                    </Link>
+                  )}
                 </CardFooter>
               </Card>
             ))}
