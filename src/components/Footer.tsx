@@ -10,13 +10,13 @@ const Footer = () => {
             <Link to="/" className="inline-block group">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 flex items-center justify-center">
-                  <img 
-                    src="/uploads/29b19ee1-3d5a-4c33-847d-777900e20bfc.png" 
-                    alt="Fighting Maroons Logo" 
-                    className="w-full h-full object-contain"
-                  />
+                <img 
+                src="/uploads/icon.png" 
+                alt="Fighting Maroons Logo" 
+                className="w-full h-full object-contain"
+              />
                 </div>
-                <span className="font-bold text-xl group-hover:text-gold-light transition-colors">FIGHTING MAROONS</span>
+                <span className="font-bold text-xl group-hover:text-gold-light transition-colors font-maroons-strong">FIGHTING MAROONS</span>
               </div>
               <p className="text-sm opacity-80 group-hover:text-gold-light transition-colors leading-relaxed">
                 University of the Philippines - Cebu
