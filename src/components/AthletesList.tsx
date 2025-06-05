@@ -786,7 +786,7 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold text-lg">{formatName(athlete)}</h3>
+                      <h3 className="font-semibold text-lg font-maroons-strong">{formatName(athlete)}</h3>
                       <p className="text-sm text-gray-600">ID: {athlete.student_id}</p>
                     </div>
                   </div>

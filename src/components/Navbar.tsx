@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
@@ -25,7 +24,7 @@ const Navbar = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold md:text-2xl font-maroons-strong group-hover:text-gold-light transition-colors">FIGHTING MAROONS</h1>
-              <p className="text-xs md:text-sm group-hover:text-gold-light transition-colors">University of the Philippines - Cebu</p>
+              <p className="text-xs md:text-sm font-maroons-strong group-hover:text-gold-light transition-colors">University of the Philippines - Cebu</p>
             </div>
           </Link>
           
@@ -41,12 +40,12 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
-            <Link to="/athletes" className="hover:text-gold-light">Athletes</Link>
-            <Link to="/sports" className="hover:text-gold-light">Sports</Link>
-            <Link to="/schedule" className="hover:text-gold-light">Games</Link>
-            <Link to="/news" className="hover:text-gold-light">News</Link>
-            <Link to="/stats" className="hover:text-gold-light">Stats</Link>
-            <Link to="/achievements" className="hover:text-gold-light">Achievements</Link>
+            <Link to="/athletes" className="font-maroons-strong hover:text-gold-light">Athletes</Link>
+            <Link to="/sports" className="font-maroons-strong hover:text-gold-light">Sports</Link>
+            <Link to="/schedule" className="font-maroons-strong hover:text-gold-light">Games</Link>
+            <Link to="/news" className="font-maroons-strong hover:text-gold-light">News</Link>
+            <Link to="/stats" className="font-maroons-strong hover:text-gold-light">Stats</Link>
+            <Link to="/achievements" className="font-maroons-strong hover:text-gold-light">Achievements</Link>
           </div>
         </div>
         
@@ -54,12 +53,12 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="md:hidden mt-4 pb-2">
             <div className="flex flex-col space-y-3">
-              <Link to="/athletes" className="hover:text-gold-light">Athletes</Link>
-              <Link to="/sports" className="hover:text-gold-light">Sports</Link>
-              <Link to="/schedule" className="hover:text-gold-light">Games</Link>
-              <Link to="/news" className="hover:text-gold-light">News</Link>
-              <Link to="/stats" className="hover:text-gold-light">Stats</Link>
-              <Link to="/achievements" className="hover:text-gold-light">Achievements</Link>
+              <Link to="/athletes" className="font-maroons-strong hover:text-gold-light">Athletes</Link>
+              <Link to="/sports" className="font-maroons-strong hover:text-gold-light">Sports</Link>
+              <Link to="/schedule" className="font-maroons-strong hover:text-gold-light">Games</Link>
+              <Link to="/news" className="font-maroons-strong hover:text-gold-light">News</Link>
+              <Link to="/stats" className="font-maroons-strong hover:text-gold-light">Stats</Link>
+              <Link to="/achievements" className="font-maroons-strong hover:text-gold-light">Achievements</Link>
             </div>
           </div>
         )}

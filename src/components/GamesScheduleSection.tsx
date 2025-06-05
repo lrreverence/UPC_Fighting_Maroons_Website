@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -96,7 +95,7 @@ const GamesScheduleSection = () => {
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-3">
             <Calendar className="h-8 w-8 text-forest" />
-            <h2 className="text-3xl font-bold text-forest">Upcoming Games</h2>
+            <h2 className="text-3xl font-bold text-forest font-maroons-strong">Upcoming Games</h2>
           </div>
           <Button asChild variant="outline" className="border-forest text-forest hover:bg-forest hover:text-white">
             <Link to="/schedule">View Full Schedule</Link>
@@ -108,7 +107,7 @@ const GamesScheduleSection = () => {
             <Card key={game.game_id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-lg font-bold">
+                  <h3 className="text-lg font-bold font-maroons-strong">
                     {game.team_name || 'Fighting Maroons'}
                   </h3>
                   <span className={`text-xs px-2 py-1 rounded-full ${

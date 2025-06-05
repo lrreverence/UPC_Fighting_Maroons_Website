@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Award as AwardIcon, Trash2, Plus } from "lucide-react";
@@ -182,7 +181,7 @@ export default function AchievementsPage() {
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-3">
             <AwardIcon className="h-8 w-8 text-maroon" />
-            <h1 className="text-4xl font-bold text-maroon">All Achievements</h1>
+            <h1 className="text-4xl font-bold text-maroon font-maroons-strong">All Achievements</h1>
           </div>
           
           <Dialog open={open} onOpenChange={setOpen}>
@@ -193,7 +192,7 @@ export default function AchievementsPage() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[450px]">
               <DialogHeader>
-                <DialogTitle className="text-xl">Add New Achievement</DialogTitle>
+                <DialogTitle className="text-xl font-maroons-strong">Add New Achievement</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleAddAchievement} className="space-y-4">                <div className="grid gap-2">
                   <Label htmlFor="team_id">Team</Label>
@@ -281,14 +280,14 @@ export default function AchievementsPage() {
                     <span className="sr-only">Delete</span>
                   </Button>
                   <div className="flex justify-between items-start mb-4 pr-6">
-                    <h3 className="text-lg font-bold">{achievement.title}</h3>
-                    <span className="bg-maroon text-white text-sm px-3 py-1 rounded-full">
+                    <h3 className="text-lg font-bold font-maroons-strong">{achievement.title}</h3>
+                    <span className="bg-maroon font-maroons-strong text-white text-m px-3 py-1 rounded-full">
                       {achievement.year}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">{achievement.team_name}</p>
+                  <p className=" text-gray-600 mb-2 font-maroons-strong">{achievement.team_name}</p>
                   {achievement.achievement_description && (
-                    <p className="text-gray-600">{achievement.achievement_description}</p>
+                    <p className="text-gray-600 font-maroons-strong">{achievement.achievement_description}</p>
                   )}
                 </CardContent>
               </Card>

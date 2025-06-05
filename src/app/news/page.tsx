@@ -215,7 +215,7 @@ export default function NewsPage() {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <NewsIcon className="h-8 w-8 text-maroon" />
-              <h1 className="text-4xl font-bold text-maroon">All News</h1>
+              <h1 className="text-4xl font-bold text-maroon font-maroons-strong">All News</h1>
             </div>
             
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -227,7 +227,7 @@ export default function NewsPage() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[525px] max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <DialogHeader>
-                  <DialogTitle>Add New News Item</DialogTitle>
+                  <DialogTitle className="font-maroons-strong">Add New News Item</DialogTitle>
                   <DialogDescription>
                     Fill in the details for the new news item.
                   </DialogDescription>
@@ -318,7 +318,7 @@ export default function NewsPage() {
                         {news.category}
                       </span>
                     </div>
-                    <h2 className="font-bold text-lg mb-2">{news.title}</h2>
+                    <h2 className="font-bold text-lg mb-2 font-maroons-strong">{news.title}</h2>
                     <p className="text-gray-600 text-sm">{news.excerpt}</p>
                   </CardContent>
                   <CardFooter className="flex justify-between items-center pt-0 border-t border-gray-100">

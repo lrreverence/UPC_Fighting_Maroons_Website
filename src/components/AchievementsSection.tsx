@@ -79,14 +79,14 @@ const AchievementsSection = () => {
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-3">
             <Award className="h-8 w-8 text-gold" />
-            <h2 className="text-3xl font-bold text-maroon">Recent Achievements</h2>
+            <h2 className="text-3xl font-bold text-maroon font-maroons-strong">Recent Achievements</h2>
           </div>
           <Button asChild variant="outline" className="border-gold text-gold hover:bg-gold hover:text-white">
             <Link to="/achievements">View All Achievements</Link>
           </Button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 font-maroons-strong text-xl">
           {achievements.map((achievement, index) => (
             <Card key={`${achievement.team_id}-${achievement.title}-${achievement.year}`} className="border-t-4 border-gold hover:shadow-md transition-shadow">
               <CardContent className="p-6">

@@ -878,7 +878,7 @@ const FullSchedule = () => {
                   <ArrowLeft className="h-4 w-4" />
                   Back to Schedule
                 </Button>
-                <h1 className="text-3xl font-bold text-forest">Game Details</h1>
+                <h1 className="text-3xl font-bold text-forest font-maroons-strong">Game Details</h1>
               </div>
 
               {/* Game Information Card */}
@@ -887,7 +887,7 @@ const FullSchedule = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Trophy className="h-6 w-6 text-maroon" />
-                      <h2 className="text-2xl font-bold">Game #{selectedGame.game_id}</h2>
+                      <h2 className="text-2xl font-bold font-maroons-strong">Game #{selectedGame.game_id}</h2>
                     </div>
                     <Badge variant={
                       selectedGame.game_status === 'Win' || selectedGame.game_status === 'Completed'
@@ -943,7 +943,7 @@ const FullSchedule = () => {
 
                   {/* Team Players Section */}
                   <div>
-                    <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 font-maroons-strong">
                       <Users className="h-5 w-5" />
                       Participating Players
                     </h3>
@@ -1013,7 +1013,7 @@ const FullSchedule = () => {
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <CalendarIcon className="h-8 w-8 text-forest" />
-                  <h1 className="text-3xl font-bold text-forest">Complete Game Schedule</h1>
+                  <h1 className="text-3xl font-bold text-forest font-maroons-strong">Complete Game Schedule</h1>
                 </div>
                 
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -1490,7 +1490,7 @@ const FullSchedule = () => {
                                               key={athlete.student_id}
                                               className={`p-3 rounded border cursor-pointer transition-colors ${
                                                 selectedPlayers.includes(athlete.student_id)
-                                                  ? 'bg-maroon/10 border-maroon'
+                                                  ? 'bg-maroon border-maroon'
                                                   : 'bg-white border-gray-200 hover:bg-gray-50'
                                               }`}
                                               onClick={() => handlePlayerToggle(athlete.student_id)}
@@ -1724,7 +1724,7 @@ const FullSchedule = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Personal Information */}
                 <div>
-                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 font-maroons-strong">
                     <User className="h-5 w-5" />
                     Personal Information
                   </h3>
@@ -1762,7 +1762,7 @@ const FullSchedule = () => {
 
                 {/* Academic Information */}
                 <div>
-                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 font-maroons-strong">
                     <span className="font-medium">Academic Information</span>
                   </h3>
                   <div className="space-y-3">
@@ -1796,7 +1796,7 @@ const FullSchedule = () => {
 
               {/* Match History Section */}
               <div>
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 font-maroons-strong">
                   <Trophy className="h-5 w-5" />
                   Recent Match History
                 </h3>

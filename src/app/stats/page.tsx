@@ -211,7 +211,7 @@ const StatsPage = () => {
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-3">
           <BarChartIcon className="h-8 w-8 text-forest" />
-          <h1 className="text-3xl font-bold text-forest">Team Statistics</h1>
+          <h1 className="text-3xl font-maroons-strong text-forest">Team Statistics</h1>
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
@@ -355,47 +355,47 @@ const StatsPage = () => {
                   <span className="sr-only">Delete</span>
                 </Button>
                 
-                <h3 className="text-xl font-bold text-forest mb-4 pr-8">{stat.team_name}</h3>
+                <h3 className="text-xl font-maroons-strong text-forest mb-4 pr-8">{stat.team_name}</h3>
                 <div className="space-y-3">
                   {stat.wins !== null && stat.losses !== null && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Win-Loss:</span>
-                      <span className="font-semibold">{stat.wins}-{stat.losses}</span>
+                      <span className="text-gray-600 font-maroons-strong">Win-Loss:</span>
+                      <span className="font-maroons-strong">{stat.wins}-{stat.losses}</span>
                     </div>
                   )}
 
                   {stat.points !== null && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Total Points:</span>
-                      <span className="font-semibold">{stat.points}</span>
+                      <span className="text-gray-600 font-maroons-strong">Total Points:</span>
+                      <span className="font-maroons-strong">{stat.points}</span>
                     </div>
                   )}
 
                   {stat.medals !== null && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Medals:</span>
-                      <span className="font-semibold">{stat.medals}</span>
+                      <span className="text-gray-600 font-maroons-strong">Medals:</span>
+                      <span className="font-maroons-strong">{stat.medals}</span>
                     </div>
                   )}
 
                   {stat.records !== null && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Records Broken:</span>
-                      <span className="font-semibold">{stat.records}</span>
+                      <span className="text-gray-600 font-maroons-strong">Records Broken:</span>
+                      <span className="font-maroons-strong">{stat.records}</span>
                     </div>
                   )}
 
                   {stat.events !== null && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Events:</span>
-                      <span className="font-semibold">{stat.events}</span>
+                      <span className="text-gray-600 font-maroons-strong">Events:</span>
+                      <span className="font-maroons-strong">{stat.events}</span>
                     </div>
                   )}
 
                   {stat.top_performer && (
                     <div className="flex justify-between pt-2 border-t">
-                      <span className="text-gray-600">Top Performer:</span>
-                      <span className="font-semibold">{stat.top_performer}</span>
+                      <span className="text-gray-600 font-maroons-strong">Top Performer:</span>
+                      <span className="font-maroons-strong">{stat.top_performer}</span>
                     </div>
                   )}
                 </div>

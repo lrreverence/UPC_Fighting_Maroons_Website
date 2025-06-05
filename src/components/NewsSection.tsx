@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Newspaper as NewsIcon } from "lucide-react";
@@ -54,7 +53,7 @@ const NewsSection = () => {
       <div className="container mx-auto px-6">
         <div className="flex items-center gap-3 mb-10">
           <NewsIcon className="h-8 w-8 text-maroon" />
-          <h2 className="text-3xl font-bold text-maroon">Latest News</h2>
+          <h2 className="text-3xl font-bold text-maroon font-maroons-strong">Latest News</h2>
         </div>
         
         {loading ? (
@@ -73,7 +72,7 @@ const NewsSection = () => {
                   />
                 </div>
                 <CardContent className="flex-grow pt-6">
-                  <h3 className="font-bold text-lg mb-2">{news.title}</h3>
+                  <h3 className="font-bold text-lg mb-2 font-maroons-strong">{news.title}</h3>
                   <p className="text-gray-600 text-sm">{news.excerpt}</p>
                 </CardContent>
                 <CardFooter className="flex justify-between items-center pt-0 border-t border-gray-100">

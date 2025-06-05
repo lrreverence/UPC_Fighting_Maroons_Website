@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -80,43 +79,43 @@ const StatsSection = () => {
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-3">
             <BarChart3 className="h-8 w-8 text-forest" />
-            <h2 className="text-3xl font-bold text-forest">Team Statistics</h2>
+            <h2 className="text-3xl font-bold text-forest font-maroons-strong">Team Statistics</h2>
           </div>
-          <Button asChild variant="outline" className="border-forest text-forest hover:bg-forest hover:text-white">
+          <Button asChild variant="outline" className="border-forest text-forest hover:bg-forest hover:text-white font-maroons-strong">
             <Link to="/stats">View All Stats</Link>
           </Button>
         </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="font-maroons-strong grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat) => (
             <Card key={stat.team_id} className="stats-card hover:shadow-md transition-shadow">
               <CardContent className="p-6">
-                <h3 className="text-lg font-bold text-forest mb-4">{stat.team_name}</h3>
-                <div className="space-y-3">
+                <h3 className="text-lg font-bold text-forest mb-4 font-maroons-strong">{stat.team_name}</h3>
+                <div className="space-y-3 font-maroons-strong">
                   {stat.wins !== null && stat.losses !== null && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Win-Loss:</span>
-                      <span className="font-semibold">{stat.wins}-{stat.losses}</span>
+                    <div className="flex justify-between font-maroons-strong">
+                      <span className="text-gray-600 font-maroons-strong">Win-Loss:</span>
+                      <span className="font-semibold font-maroons-strong">{stat.wins}-{stat.losses}</span>
                     </div>
                   )}
 
                   {stat.points !== null && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Points:</span>
-                      <span className="font-semibold">{stat.points}</span>
+                      <span className="text-gray-600 font-maroons-strong">Points:</span>
+                      <span className="font-semibold font-maroons-strong">{stat.points}</span>
                     </div>
                   )}
 
                   {stat.medals !== null && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Medals:</span>
-                      <span className="font-semibold">{stat.medals}</span>
+                      <span className="text-gray-600 font-maroons-strong">Medals:</span>
+                      <span className="font-semibold font-maroons-strong">{stat.medals}</span>
                     </div>
                   )}
 
                   {stat.top_performer && (
                     <div className="pt-2 border-t">
-                      <span className="text-gray-600 text-sm">Top Performer:</span>
-                      <p className="font-semibold text-sm">{stat.top_performer}</p>
+                      <span className="text-gray-600 text-sm font-maroons-strong">Top Performer:</span>
+                      <p className="font-semibold text-sm font-maroons-strong">{stat.top_performer}</p>
                     </div>
                   )}
                 </div>

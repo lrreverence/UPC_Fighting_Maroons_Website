@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -218,7 +217,7 @@ const AthletesSection = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="text-center md:text-left">
-                      <h1 className="text-3xl font-bold">{formatName(selectedAthlete)}</h1>
+                      <h1 className="text-3xl font-bold font-maroons-strong">{formatName(selectedAthlete)}</h1>
                       {selectedAthlete.team_name && (
                         <p className="text-xl text-white/90 mt-2">{selectedAthlete.team_name}</p>
                       )}
@@ -230,7 +229,7 @@ const AthletesSection = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Personal Information */}
                     <div>
-                      <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                      <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 font-maroons-strong">
                         <User className="h-5 w-5" />
                         Personal Information
                       </h3>
@@ -280,7 +279,7 @@ const AthletesSection = () => {
 
                     {/* Academic Information */}
                     <div>
-                      <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                      <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 font-maroons-strong">
                         <GraduationCap className="h-5 w-5" />
                         Academic Information
                       </h3>
@@ -322,7 +321,7 @@ const AthletesSection = () => {
                   {/* Match History Section */}
                   <div>
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-xl font-semibold flex items-center gap-2">
+                      <h3 className="text-xl font-semibold flex items-center gap-2 font-maroons-strong">
                         <Trophy className="h-5 w-5" />
                         Match History
                       </h3>
@@ -346,7 +345,7 @@ const AthletesSection = () => {
                               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-2">
-                                    <h4 className="font-semibold text-lg">Game #{match.game_id}</h4>
+                                    <h4 className="font-semibold text-lg font-maroons-strong">Game #{match.game_id}</h4>
                                     {match.game_status && (
                                       <Badge variant={
                                         match.game_status.toLowerCase().includes('win') || match.game_status.toLowerCase().includes('won')
@@ -398,7 +397,7 @@ const AthletesSection = () => {
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-3">
             <Activity className="h-8 w-8 text-maroon" />
-            <h2 className="text-3xl font-bold text-maroon">Featured Athletes</h2>
+            <h2 className="text-3xl font-bold text-maroon font-maroons-strong">Featured Athletes</h2>
           </div>
           <Button asChild variant="outline" className="border-maroon text-maroon hover:bg-maroon hover:text-white">
             <Link to="/athletes">View All Athletes</Link>
@@ -425,7 +424,7 @@ const AthletesSection = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="text-xl font-bold mb-1">
+                    <h3 className="text-xl font-bold mb-1 font-maroons-strong">
                       {athlete.fname} {athlete.mname ? `${athlete.mname} ` : ''}{athlete.lname}
                     </h3>
                     {athlete.team_name && (

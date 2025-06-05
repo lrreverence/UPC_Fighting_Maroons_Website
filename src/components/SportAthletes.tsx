@@ -129,7 +129,9 @@ const SportAthletes = () => {
         
         {teams.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-3">Teams</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-3 font-maroons-strong">
+              {teams.length > 1 ? 'Teams' : 'Team'}
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {teams.map((team) => (
                 <Card key={team.team_name} className="border-l-4 border-l-maroon">
@@ -156,7 +158,7 @@ const SportAthletes = () => {
         </div>
       ) : (
         <div>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6 font-maroons-strong">
             Athletes ({athletes.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -174,7 +176,7 @@ const SportAthletes = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-xl font-bold">
+                      <h3 className="text-xl font-bold font-maroons-strong">
                         {athlete.fname} {athlete.mname ? `${athlete.mname} ` : ''}{athlete.lname}
                       </h3>
                       {athlete.team_name && (

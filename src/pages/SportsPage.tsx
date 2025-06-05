@@ -73,10 +73,12 @@ const SportsPage = () => {
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="space-y-3">
-                    <p className="text-gray-600 text-sm font-medium">Teams:</p>
+                    {sportTeams.length > 1 && (
+                      <p className="text-gray-600 text-sm font-maroons-strong">Teams:</p>
+                    )}
                     {sportTeams.map((team) => (
                       <div key={team.team_id} className="bg-gray-100 rounded-lg p-3">
-                        <h3 className="font-semibold text-[#7b1113]">
+                        <h3 className="font-maroons-strong text-[#7b1113]">
                           {team.team_name}
                         </h3>
                         {team.coach_name && (
@@ -85,11 +87,7 @@ const SportsPage = () => {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 text-center">
-                    <span className="text-[#7b1113] font-medium group-hover:text-[#9b3133] transition-colors">
-                      View Details →
-                    </span>
-                  </div>
+
                 </CardContent>
               </Link>
             </Card>
