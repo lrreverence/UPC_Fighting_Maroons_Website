@@ -1,29 +1,34 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
+import { 
+  Search, 
+  Filter, 
+  ChevronDown, 
+  User, 
+  Trash2,
+  ArrowLeft,
+  Hash,
+  Calendar,
+  MapPin,
+  Mail,
+  Phone,
+  GraduationCap,
+  Building,
+  Trophy,
+  X,
+  Edit
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { Search, Filter, Calendar, Edit, Trophy, X, User, ArrowLeft, SortAsc, SortDesc, ChevronDown, Mail, Phone, MapPin, GraduationCap, Hash, Building } from "lucide-react";
 
 type Athlete = {
   student_id: number;
@@ -39,8 +44,17 @@ type Athlete = {
   year_level?: number;
   block?: string;
   team_id?: string;
-  team_name?: string; // Keep for display purposes
+  team_name?: string;
   image_url?: string;
+};
+
+type Filters = {
+  course: string;
+  department: string;
+  year_level: string;
+  block: string;
+  team_id: string;
+  hometown: string;
 };
 
 type MatchHistory = {
@@ -57,15 +71,6 @@ type MatchHistory = {
 
 type SortOption = "newest" | "oldest";
 type FilterOption = "all" | "win" | "loss";
-
-type Filters = {
-  course: string;
-  department: string;
-  year_level: string;
-  block: string;
-  team_id: string;
-  hometown: string;
-};
 
 type AthletesListProps = {
   onProfileViewChange?: (isProfileView: boolean) => void;
@@ -810,30 +815,7 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
         Showing {filteredAthletes.length} of {athletes.length} athletes
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Athlete</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete {athleteToDelete ? formatName(athleteToDelete) : ''}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteConfirm}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Athletes List */}
+      {/* Athletes Cards */}
       {filteredAthletes.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600">
@@ -841,50 +823,47 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredAthletes.map((athlete) => (
-            <Card 
-              key={athlete.student_id} 
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => handleAthleteClick(athlete)}
-            >
+            <Card key={athlete.student_id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
                       <AvatarImage 
                         src={athlete.image_url || ""} 
-                        alt={formatName(athlete)}
-                        className="object-cover"
+                        alt={`${athlete.fname} ${athlete.lname}`}
                       />
                       <AvatarFallback className="bg-maroon text-white">
                         <User className="h-6 w-6" />
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold text-lg font-maroons-strong">{formatName(athlete)}</h3>
+                      <h3 className="font-semibold text-lg">{`${athlete.lname}, ${athlete.fname} ${athlete.mname ? athlete.mname.charAt(0) + '.' : ''}`}</h3>
                       <p className="text-sm text-gray-600">ID: {athlete.student_id}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      {athlete.team_name && (
-                        <Badge variant="secondary" className="mb-1">
-                          {athlete.team_name}
-                        </Badge>
-                      )}
-                      <p className="text-sm text-gray-600">
-                        {athlete.course && athlete.year_level ? `${athlete.course} - Year ${athlete.year_level}` : athlete.course || ''}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={(e) => handleDeleteClick(e, athlete)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => handleDeleteClick(e, athlete)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Team:</span>
+                    <span className="text-sm font-medium">{athlete.team_name || '-'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Course:</span>
+                    <span className="text-sm font-medium">
+                      {athlete.course && athlete.year_level 
+                        ? `${athlete.course} - Year ${athlete.year_level}`
+                        : athlete.course || '-'}
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -892,6 +871,24 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the athlete's record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
