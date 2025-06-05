@@ -492,10 +492,28 @@ const FullSchedule = () => {
   };
 
   const handleDeleteGame = async (gameId: string) => {
-    try {
-      const { error } = await supabase.from("game").delete().eq("game_id", gameId);
+    if (!confirm("Are you sure you want to delete this game? This action cannot be undone.")) {
+      return;
+    }
 
-      if (error) throw error;
+    try {
+      setIsLoading(true);
+      
+      // First delete all related game_participation records
+      const { error: participationError } = await supabase
+        .from("game_participation")
+        .delete()
+        .eq("game_id", gameId);
+
+      if (participationError) throw participationError;
+
+      // Then delete the game
+      const { error: gameError } = await supabase
+        .from("game")
+        .delete()
+        .eq("game_id", gameId);
+
+      if (gameError) throw gameError;
 
       toast({
         title: "Game deleted",
@@ -508,9 +526,12 @@ const FullSchedule = () => {
       toast({
         variant: "destructive",
         title: "Error deleting game",
-        description: "There was a problem deleting the game.",
+        description: "There was a problem deleting the game. Please try again.",
       });
-    }  };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleEditGame = async (game: Game) => {
     setEditingGame(game);
@@ -559,34 +580,29 @@ const FullSchedule = () => {
     
     try {
       setIsLoading(true);
-        const gameDateTime = new Date(`${values.game_date}T${values.start_time}`);
-      const gameEndDateTime = new Date(`${values.game_date}T${values.end_time}`);
-      const currentTime = new Date();
+      const timeStatus = getGameTimeStatus(editingGame.game_date, editingGame.start_time, editingGame.end_time);
       
-      const timeStatus = getGameTimeStatus(values.game_date, values.start_time, values.end_time);
-      
-      // Apply time-based validation
-      let finalGameStatus = values.game_status;
-      let updateData: any = {
-        team_id: values.team_id,
-        opponent_team: values.opponent_team,
-        game_date: values.game_date,
-        start_time: values.start_time,
-        end_time: values.end_time,
-        location: values.location
-      };
+      // Determine what can be updated based on game time status
+      let updateData: any = {};
       
       if (timeStatus === 'PRE_GAME') {
-        // Before game starts - can edit all details but force status to Scheduled
-        finalGameStatus = 'Scheduled';
-        updateData.game_status = finalGameStatus;
-      } else if (timeStatus === 'DURING_GAME') {
-        // During game - force status to Ongoing, don't allow other changes
-        finalGameStatus = 'Ongoing';
+        // Before game starts - can edit all details
         updateData = {
-          game_status: finalGameStatus
-        };      } else {
-        // After game ends - only allow status changes
+          team_id: values.team_id,
+          opponent_team: values.opponent_team,
+          game_date: values.game_date,
+          start_time: values.start_time,
+          end_time: values.end_time,
+          location: values.location,
+          game_status: 'Scheduled' // Force status to Scheduled for future games
+        };
+      } else if (timeStatus === 'DURING_GAME') {
+        // During game - only allow status change to Ongoing
+        updateData = {
+          game_status: 'Ongoing'
+        };
+      } else {
+        // After game ends - only allow status changes to final states
         const availableStatuses = getAvailableStatuses(timeStatus);
         if (!availableStatuses.includes(values.game_status)) {
           toast({
@@ -599,39 +615,30 @@ const FullSchedule = () => {
         updateData = {
           game_status: values.game_status
         };
-      }      // Update the game
+      }
+
+      // Update the game
       const { error: gameError } = await supabase
         .from("game")
         .update(updateData)
         .eq("game_id", editingGame.game_id);
 
-      if (gameError) throw gameError;      // Update team statistics if game status changed to Win or Loss
+      if (gameError) throw gameError;
+
       const previousStatus = editingGame.game_status;
       const newStatus = updateData.game_status || previousStatus;
       
-      console.log('=== STATISTICS UPDATE DEBUG ===');
-      console.log('Previous status:', previousStatus);
-      console.log('New status:', newStatus);
-      console.log('Team ID:', values.team_id);
-      
+      // Update team statistics if needed
       if ((newStatus === 'Win' || newStatus === 'Loss') && 
           (previousStatus !== 'Win' && previousStatus !== 'Loss')) {
-        // Status changed from non-result to result - update statistics
-        console.log('Case 1: Non-result to result - updating statistics');
         await updateTeamStatistics(values.team_id);
       } else if ((previousStatus === 'Win' || previousStatus === 'Loss') && 
                  (newStatus === 'Win' || newStatus === 'Loss') && 
                  previousStatus !== newStatus) {
-        // Status changed from one result to another - update statistics
-        console.log('Case 2: Result to different result - updating statistics');
         await updateTeamStatistics(values.team_id);
       } else if ((previousStatus === 'Win' || previousStatus === 'Loss') && 
                  (newStatus !== 'Win' && newStatus !== 'Loss')) {
-        // Status changed from result to non-result - update statistics
-        console.log('Case 3: Result to non-result - updating statistics');
         await updateTeamStatistics(values.team_id);
-      } else {
-        console.log('No statistics update needed - conditions not met');
       }
 
       // Update player participation only if game hasn't started
@@ -645,7 +652,8 @@ const FullSchedule = () => {
         if (deleteError) throw deleteError;
 
         // Insert new participations if players are selected
-        if (selectedPlayers.length > 0) {          const participationRecords = selectedPlayers.map(studentId => ({
+        if (selectedPlayers.length > 0) {
+          const participationRecords = selectedPlayers.map(studentId => ({
             game_id: editingGame.game_id,
             student_id: studentId
           }));
