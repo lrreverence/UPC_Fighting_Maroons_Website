@@ -2,7 +2,7 @@ import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -16,19 +16,15 @@ import SportsPage from "./pages/SportsPage";
 import Navbar from "./components/Navbar";
 import HomeNavbar from "./components/HomeNavbar";
 import Footer from "./components/Footer";
+import { AuthProvider } from './lib/auth';
+import Login from './pages/Login';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminDashboard from './pages/AdminDashboard';
+import UserDashboard from './pages/UserDashboard';
+import ScrollToTop from './components/ScrollToTop';
+import AthletesPage from './pages/AthletesPage';
 
 const queryClient = new QueryClient();
-
-// ScrollToTop component to handle scroll restoration
-const ScrollToTop = () => {
-  const { pathname } = useLocation();
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-
-  return null;
-};
 
 const AppContent = () => {
   const location = useLocation();
@@ -41,13 +37,23 @@ const AppContent = () => {
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/athletes" element={<AllAthletes />} />
+          <Route path="/athletes" element={<AthletesPage />} />
           <Route path="/sports" element={<SportsPage />} />
           <Route path="/schedule" element={<FullSchedule />} />
           <Route path="/news" element={<NewsPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/achievements" element={<AchievementsPage />} />
           <Route path="/sports/:sport" element={<SportPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/admin/*"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/" element={<UserDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -59,15 +65,17 @@ const AppContent = () => {
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-        <Toaster />
-        <Sonner />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Router>
+            <AppContent />
+          </Router>
+          <Toaster />
+          <Sonner />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </AuthProvider>
   );
 };
 

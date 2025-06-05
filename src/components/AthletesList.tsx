@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -23,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Search, Filter, Calendar, Edit, Trophy, X, User, ArrowLeft, SortAsc, SortDesc, ChevronDown, Mail, Phone, MapPin, GraduationCap, Hash, Building } from "lucide-react";
+import { Search, Filter, Calendar, Edit, Trophy, X, User, ArrowLeft, SortAsc, SortDesc, ChevronDown, Mail, Phone, MapPin, GraduationCap, Hash, Building, Edit2, Trash2 } from "lucide-react";
 
 type Athlete = {
   student_id: number;
@@ -69,9 +71,10 @@ type Filters = {
 
 type AthletesListProps = {
   onProfileViewChange?: (isProfileView: boolean) => void;
+  isAdminMode?: boolean;
 };
 
-const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
+const AthletesList = ({ onProfileViewChange, isAdminMode = false }: AthletesListProps) => {
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [filteredAthletes, setFilteredAthletes] = useState<Athlete[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,6 +103,9 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
   const [editingStatDescription, setEditingStatDescription] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [athleteToDelete, setAthleteToDelete] = useState<Athlete | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedAthlete, setEditedAthlete] = useState<Partial<Athlete>>({});
+
   // Get unique filter options
   const getUniqueOptions = (field: keyof Athlete) => {
     const options = athletes
@@ -120,10 +126,10 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
       .sort((a, b) => a.team_name.localeCompare(b.team_name));
     return teams;
   };
+
   const fetchAthletes = async () => {
     try {
       setLoading(true);
-      
       const { data, error } = await supabase
         .from('athlete')
         .select(`
@@ -136,18 +142,18 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
       
       if (error) throw error;
       
-      // Transform data to include team_name
       const transformedData = data?.map((athlete: any) => ({
         ...athlete,
         team_name: athlete.team?.team_name
       })) || [];
       
       setAthletes(transformedData);
+      setFilteredAthletes(transformedData);
     } catch (error) {
       console.error("Error fetching athletes:", error);
       toast({
         title: "Error",
-        description: "Failed to load athletes.",
+        description: "Failed to load athletes data.",
         variant: "destructive",
       });
     } finally {
@@ -174,7 +180,9 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
     });
 
     setFilteredAthletes(filtered);
-  };  const clearFilters = () => {
+  };
+
+  const clearFilters = () => {
     setFilters({
       course: "all",
       department: "all",
@@ -185,6 +193,7 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
     });
     setSearchTerm("");
   };
+
   const handleAthleteClick = async (athlete: Athlete) => {
     setSelectedAthlete(athlete);
     setShowProfile(true);
@@ -380,18 +389,87 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
     }
   };
 
-  // Add event listener for athlete addition
-  useEffect(() => {
-    const handleAthleteAdded = () => {
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    const filtered = athletes.filter(athlete => {
+      const fullName = `${athlete.fname} ${athlete.mname || ''} ${athlete.lname}`.toLowerCase();
+      return fullName.includes(value.toLowerCase()) ||
+        athlete.student_id.toString().includes(value) ||
+        athlete.team_name?.toLowerCase().includes(value.toLowerCase());
+    });
+    setFilteredAthletes(filtered);
+  };
+
+  const handleEdit = (athlete: Athlete) => {
+    setSelectedAthlete(athlete);
+    setEditedAthlete(athlete);
+    setIsEditing(true);
+  };
+
+  const handleDelete = async (athlete: Athlete) => {
+    setAthleteToDelete(athlete);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!athleteToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('athlete')
+        .delete()
+        .eq('student_id', athleteToDelete.student_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Athlete deleted successfully.",
+      });
+
       fetchAthletes();
-    };
+    } catch (error) {
+      console.error("Error deleting athlete:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete athlete.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setAthleteToDelete(null);
+    }
+  };
 
-    window.addEventListener('athleteAdded', handleAthleteAdded);
+  const handleSaveEdit = async () => {
+    if (!selectedAthlete || !editedAthlete) return;
 
-    return () => {
-      window.removeEventListener('athleteAdded', handleAthleteAdded);
-    };
-  }, []);
+    try {
+      const { error } = await supabase
+        .from('athlete')
+        .update(editedAthlete)
+        .eq('student_id', selectedAthlete.student_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Athlete updated successfully.",
+      });
+
+      fetchAthletes();
+      setIsEditing(false);
+      setSelectedAthlete(null);
+      setEditedAthlete({});
+    } catch (error) {
+      console.error("Error updating athlete:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update athlete.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     fetchAthletes();
@@ -414,7 +492,7 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
   if (showProfile && selectedAthlete) {
     return (
       <div className="space-y-6">
-        {/* Back button */}        <Button
+        <Button
           variant="outline"
           onClick={() => {
             setShowProfile(false);
@@ -427,471 +505,249 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
           Back to Athletes List
         </Button>
 
-        {/* Athlete Profile */}
-        <div className="max-w-4xl mx-auto">
-          <Card className="overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-maroon to-maroon/80 text-white">
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <Avatar className="h-32 w-32 ring-4 ring-white/20">
-                  <AvatarImage 
-                    src={selectedAthlete.image_url || ""} 
-                    alt={formatName(selectedAthlete)}
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="bg-white/20 text-white text-2xl">
-                    <User className="h-16 w-16" />
+        <Card>
+          <CardHeader className="bg-gradient-to-r from-maroon to-maroon/80 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedAthlete.image_url || ""} alt={`${selectedAthlete.fname} ${selectedAthlete.lname}`} />
+                  <AvatarFallback className="bg-white/20 text-white">
+                    <User className="h-8 w-8" />
                   </AvatarFallback>
                 </Avatar>
-                <div className="text-center md:text-left">
-                  <h1 className="text-3xl font-bold">{formatName(selectedAthlete)}</h1>
-                  {selectedAthlete.team_name && (
-                    <p className="text-xl text-white/90 mt-2">{selectedAthlete.team_name}</p>
-                  )}
+                <div>
+                  <h2 className="text-2xl font-bold">
+                    {selectedAthlete.fname} {selectedAthlete.mname ? `${selectedAthlete.mname} ` : ''}{selectedAthlete.lname}
+                  </h2>
+                  <p className="text-white/80">ID: {selectedAthlete.student_id}</p>
                 </div>
               </div>
-            </CardHeader>
-            
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Personal Information */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Personal Information
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Hash className="h-4 w-4 text-gray-500" />
-                      <span className="font-medium">Student ID:</span>
-                      <span>{selectedAthlete.student_id}</span>
-                    </div>
-                    {selectedAthlete.birthdate && (
-                      <>
-                        <div className="flex items-center gap-3">
-                          <Calendar className="h-4 w-4 text-gray-500" />
-                          <span className="font-medium">Birthdate:</span>
-                          <span>{new Date(selectedAthlete.birthdate).toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Calendar className="h-4 w-4 text-gray-500" />
-                          <span className="font-medium">Age:</span>
-                          <span>{calculateAge(selectedAthlete.birthdate)} years old</span>
-                        </div>
-                      </>
-                    )}
-                    {selectedAthlete.hometown && (
-                      <div className="flex items-center gap-3">
-                        <MapPin className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">Hometown:</span>
-                        <span>{selectedAthlete.hometown}</span>
-                      </div>
-                    )}
-                    {selectedAthlete.email && (
-                      <div className="flex items-center gap-3">
-                        <Mail className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">Email:</span>
-                        <span>{selectedAthlete.email}</span>
-                      </div>
-                    )}
-                    {selectedAthlete.phone_number && (
-                      <div className="flex items-center gap-3">
-                        <Phone className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">Phone:</span>
-                        <span>{selectedAthlete.phone_number}</span>
-                      </div>
-                    )}
-                  </div>
+              {isAdminMode && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-white/10 hover:bg-white/20"
+                    onClick={() => handleEdit(selectedAthlete)}
+                  >
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-white/10 hover:bg-white/20"
+                    onClick={() => handleDelete(selectedAthlete)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
                 </div>
-
-                {/* Academic Information */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5" />
-                    Academic Information
-                  </h3>
-                  <div className="space-y-3">
-                    {selectedAthlete.department && (
-                      <div className="flex items-center gap-3">
-                        <Building className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">Department:</span>
-                        <span>{selectedAthlete.department}</span>
-                      </div>
-                    )}
-                    {selectedAthlete.course && (
-                      <div className="flex items-center gap-3">
-                        <GraduationCap className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">Course:</span>
-                        <span>{selectedAthlete.course}</span>
-                      </div>
-                    )}
-                    {selectedAthlete.year_level && (
-                      <div className="flex items-center gap-3">
-                        <Calendar className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">Year Level:</span>
-                        <span>{selectedAthlete.year_level}</span>
-                      </div>
-                    )}
-                    {selectedAthlete.block && (
-                      <div className="flex items-center gap-3">
-                        <Hash className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">Block:</span>
-                        <span>{selectedAthlete.block}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <Separator className="my-8" />
-
-              {/* Match History Section */}
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold flex items-center gap-2">
-                    <Trophy className="h-5 w-5" />
-                    Match History
-                  </h3>
-                  
-                  <div className="flex gap-4 items-center">
-                    <Select value={sortOption} onValueChange={(value: SortOption) => setSortOption(value)}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="newest">Most Recent</SelectItem>
-                        <SelectItem value="oldest">Oldest First</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <Select value={filterOption} onValueChange={(value: FilterOption) => setFilterOption(value)}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Matches</SelectItem>
-                        <SelectItem value="win">Wins Only</SelectItem>
-                        <SelectItem value="loss">Losses Only</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <h3 className="font-semibold mb-2">Personal Information</h3>
+                <div className="space-y-2">
+                  <p><span className="font-medium">Birthdate:</span> {selectedAthlete.birthdate || 'N/A'}</p>
+                  <p><span className="font-medium">Hometown:</span> {selectedAthlete.hometown || 'N/A'}</p>
+                  <p><span className="font-medium">Email:</span> {selectedAthlete.email || 'N/A'}</p>
+                  <p><span className="font-medium">Phone:</span> {selectedAthlete.phone_number || 'N/A'}</p>
                 </div>
-
-                {loadingHistory ? (
-                  <div className="flex justify-center items-center py-12">
-                    <div className="h-8 w-8 border-4 border-maroon border-t-transparent rounded-full animate-spin"></div>
-                    <span className="ml-3 text-gray-600">Loading match history...</span>
-                  </div>
-                ) : getSortedAndFilteredMatches().length === 0 ? (
-                  <div className="text-center py-12">
-                    <Trophy className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-gray-600">
-                      {filterOption === "all" 
-                        ? "No match history found for this athlete." 
-                        : `No ${filterOption === "win" ? "wins" : "losses"} found for this athlete.`
-                      }
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {getSortedAndFilteredMatches().map((match) => (
-                      <Card key={match.game_id} className="border-l-4 border-l-maroon">
-                        <CardContent className="p-4">
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-semibold text-lg">Game #{match.game_id}</h4>
-                                {match.game_status && (
-                                  <Badge variant={
-                                    match.game_status.toLowerCase().includes('win') || match.game_status.toLowerCase().includes('won')
-                                      ? 'default'
-                                      : match.game_status.toLowerCase().includes('loss') || match.game_status.toLowerCase().includes('lost')
-                                      ? 'destructive'
-                                      : 'secondary'
-                                  }>
-                                    {match.game_status}
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                                <p><strong>Date:</strong> {formatMatchDate(match.game_date)}</p>
-                                <p><strong>Time:</strong> {formatMatchTime(match.start_time)}</p>
-                                {match.opponent_team && <p><strong>Opponent:</strong> {match.opponent_team}</p>}
-                                {match.location && <p><strong>Location:</strong> {match.location}</p>}
-                                {match.team_name && <p><strong>Team:</strong> {match.team_name}</p>}
-                              </div>
-                            </div>
-                            
-                            <div className="flex-1 max-w-md">
-                              <Label className="text-sm font-medium">Performance Notes:</Label>
-                              {editingStatId === match.game_id ? (
-                                <div className="flex gap-2 mt-1">
-                                  <Input
-                                    value={editingStatDescription}
-                                    onChange={(e) => setEditingStatDescription(e.target.value)}
-                                    placeholder="Add performance notes..."
-                                    className="flex-1"
-                                  />
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleUpdateStatDescription(match.game_id, editingStatDescription)}
-                                    className="bg-maroon hover:bg-maroon/90"
-                                  >
-                                    Save
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setEditingStatId(null);
-                                      setEditingStatDescription("");
-                                    }}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2 mt-1">
-                                  <p className="text-sm text-gray-600 flex-1 min-h-[32px] px-3 py-1 bg-gray-50 rounded border">
-                                    {match.stat_description || "No performance notes yet"}
-                                  </p>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setEditingStatId(match.game_id);
-                                      setEditingStatDescription(match.stat_description || "");
-                                    }}
-                                    className="text-blue-600 hover:text-blue-700"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              <div>
+                <h3 className="font-semibold mb-2">Academic Information</h3>
+                <div className="space-y-2">
+                  <p><span className="font-medium">Department:</span> {selectedAthlete.department || 'N/A'}</p>
+                  <p><span className="font-medium">Course:</span> {selectedAthlete.course || 'N/A'}</p>
+                  <p><span className="font-medium">Year Level:</span> {selectedAthlete.year_level || 'N/A'}</p>
+                  <p><span className="font-medium">Block:</span> {selectedAthlete.block || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Search and Filter Controls */}
-      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        <div className="relative max-w-md flex-1">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search athletes by name, team, or ID..."
+            placeholder="Search athletes..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             className="pl-10"
           />
         </div>
-        
         <Button
           variant="outline"
           onClick={() => setShowFilters(!showFilters)}
           className="flex items-center gap-2"
         >
           <Filter className="h-4 w-4" />
-          Filters
-          <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+          {showFilters ? 'Hide Filters' : 'Show Filters'}
         </Button>
       </div>
 
-      {/* Filters Panel */}
-      {showFilters && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="course-filter">Course</Label>
-                <Select value={filters.course} onValueChange={(value) => setFilters({...filters, course: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All courses" />
-                  </SelectTrigger>                  <SelectContent>
-                    <SelectItem value="all">All courses</SelectItem>
-                    {getUniqueOptions('course').map((course) => (
-                      <SelectItem key={course} value={course}>{course}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="department-filter">Department</Label>
-                <Select value={filters.department} onValueChange={(value) => setFilters({...filters, department: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All departments" />
-                  </SelectTrigger>                  <SelectContent>
-                    <SelectItem value="all">All departments</SelectItem>
-                    {getUniqueOptions('department').map((department) => (
-                      <SelectItem key={department} value={department}>{department}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="year-filter">Year Level</Label>
-                <Select value={filters.year_level} onValueChange={(value) => setFilters({...filters, year_level: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All years" />
-                  </SelectTrigger>                  <SelectContent>
-                    <SelectItem value="all">All years</SelectItem>
-                    {getUniqueOptions('year_level').map((year) => (
-                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="block-filter">Block</Label>
-                <Select value={filters.block} onValueChange={(value) => setFilters({...filters, block: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All blocks" />
-                  </SelectTrigger>                  <SelectContent>
-                    <SelectItem value="all">All blocks</SelectItem>
-                    {getUniqueOptions('block').map((block) => (
-                      <SelectItem key={block} value={block}>{block}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>              <div>
-                <Label htmlFor="team-filter">Team</Label>
-                <Select value={filters.team_id} onValueChange={(value) => setFilters({...filters, team_id: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All teams" />
-                  </SelectTrigger>                  <SelectContent>
-                    <SelectItem value="all">All teams</SelectItem>
-                    {getUniqueTeamOptions().map((team) => (
-                      <SelectItem key={team.team_id} value={team.team_id}>{team.team_name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="hometown-filter">Hometown</Label>
-                <Select value={filters.hometown} onValueChange={(value) => setFilters({...filters, hometown: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All hometowns" />
-                  </SelectTrigger>                  <SelectContent>
-                    <SelectItem value="all">All hometowns</SelectItem>
-                    {getUniqueOptions('hometown').map((hometown) => (
-                      <SelectItem key={hometown} value={hometown}>{hometown}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="flex justify-end mt-4">
-              <Button variant="outline" onClick={clearFilters}>
-                Clear All Filters
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Results count */}
-      <div className="text-sm text-gray-600">
-        Showing {filteredAthletes.length} of {athletes.length} athletes
-      </div>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Athlete</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete {athleteToDelete ? formatName(athleteToDelete) : ''}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteConfirm}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Athletes List */}
       {filteredAthletes.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600">
-            {searchTerm || Object.values(filters).some(f => f !== "all") ? "No athletes found matching your criteria." : "No athletes found."}
+            {searchTerm ? "No athletes found matching your search." : "No athletes found."}
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAthletes.map((athlete) => (
-            <Card 
-              key={athlete.student_id} 
+            <Card
+              key={athlete.student_id}
               className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => handleAthleteClick(athlete)}
+              onClick={() => {
+                setSelectedAthlete(athlete);
+                setShowProfile(true);
+                onProfileViewChange?.(true);
+              }}
             >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage 
-                        src={athlete.image_url || ""} 
-                        alt={formatName(athlete)}
-                        className="object-cover"
-                      />
-                      <AvatarFallback className="bg-maroon text-white">
-                        <User className="h-6 w-6" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-semibold text-lg font-maroons-strong">{formatName(athlete)}</h3>
-                      <p className="text-sm text-gray-600">ID: {athlete.student_id}</p>
-                    </div>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={athlete.image_url || ""} alt={`${athlete.fname} ${athlete.lname}`} />
+                    <AvatarFallback className="bg-maroon text-white">
+                      <User className="h-6 w-6" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <h3 className="font-semibold">
+                      {athlete.fname} {athlete.mname ? `${athlete.mname} ` : ''}{athlete.lname}
+                    </h3>
+                    <p className="text-sm text-gray-500">ID: {athlete.student_id}</p>
+                    {athlete.team_name && (
+                      <p className="text-sm text-maroon">{athlete.team_name}</p>
+                    )}
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      {athlete.team_name && (
-                        <Badge variant="secondary" className="mb-1">
-                          {athlete.team_name}
-                        </Badge>
-                      )}
-                      <p className="text-sm text-gray-600">
-                        {athlete.course && athlete.year_level ? `${athlete.course} - Year ${athlete.year_level}` : athlete.course || ''}
-                      </p>
+                  {isAdminMode && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(athlete);
+                        }}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(athlete);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={(e) => handleDeleteClick(e, athlete)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Athlete</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fname">First Name</Label>
+                <Input
+                  id="fname"
+                  value={editedAthlete.fname || ''}
+                  onChange={(e) => setEditedAthlete({ ...editedAthlete, fname: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lname">Last Name</Label>
+                <Input
+                  id="lname"
+                  value={editedAthlete.lname || ''}
+                  onChange={(e) => setEditedAthlete({ ...editedAthlete, lname: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={editedAthlete.email || ''}
+                onChange={(e) => setEditedAthlete({ ...editedAthlete, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                value={editedAthlete.phone_number || ''}
+                onChange={(e) => setEditedAthlete({ ...editedAthlete, phone_number: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                <Input
+                  id="department"
+                  value={editedAthlete.department || ''}
+                  onChange={(e) => setEditedAthlete({ ...editedAthlete, department: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="course">Course</Label>
+                <Input
+                  id="course"
+                  value={editedAthlete.course || ''}
+                  onChange={(e) => setEditedAthlete({ ...editedAthlete, course: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsEditing(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Athlete</DialogTitle>
+          </DialogHeader>
+          <p>Are you sure you want to delete this athlete? This action cannot be undone.</p>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
