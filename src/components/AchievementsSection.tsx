@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 type Achievement = {
+  team_id: string;
   team_name: string;
   title: string;
   year: number;
@@ -23,13 +24,25 @@ const AchievementsSection = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('achievement')
-        .select('*')
+        .select(`
+          *,
+          team:team_id (
+            team_name,
+            team_display_name
+          )
+        `)
         .order('year', { ascending: false })
         .limit(4);
       
       if (error) throw error;
       
-      setAchievements(data as Achievement[]);
+      // Transform data to include team_name from the joined team table
+      const transformedAchievements = data?.map((achievement: any) => ({
+        ...achievement,
+        team_name: achievement.team?.team_display_name || achievement.team?.team_name || 'Unknown Team'
+      })) || [];
+      
+      setAchievements(transformedAchievements);
     } catch (error) {
       console.error("Error fetching achievements:", error);
       toast({
@@ -74,7 +87,7 @@ const AchievementsSection = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {achievements.map((achievement, index) => (
-            <Card key={`${achievement.team_name}-${achievement.title}-${achievement.year}`} className="border-t-4 border-gold hover:shadow-md transition-shadow">
+            <Card key={`${achievement.team_id}-${achievement.title}-${achievement.year}`} className="border-t-4 border-gold hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-lg font-bold">{achievement.title}</h3>

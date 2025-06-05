@@ -78,7 +78,7 @@ const SportsPage = () => {
                     {sportTeams.map((team) => (
                       <div key={team.team_id} className="bg-gray-100 rounded-lg p-3">
                         <h3 className="font-semibold text-[#7b1113]">
-                          {team.team_display_name || team.team_name}
+                          {team.team_name}
                         </h3>
                         <p className="text-sm text-gray-600">Coach: {team.coach_name}</p>
                       </div>
