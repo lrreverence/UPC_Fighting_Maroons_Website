@@ -34,7 +34,8 @@ const AddAthleteForm = () => {
   const [open, setOpen] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState("");  const [formData, setFormData] = useState({
+  const [selectedImageUrl, setSelectedImageUrl] = useState("");
+  const [formData, setFormData] = useState({
     student_id: "",
     fname: "",
     mname: "",
@@ -48,7 +49,9 @@ const AddAthleteForm = () => {
     year_level: "",
     block: "",
     team_id: "",
-  });  const fetchTeams = async () => {
+  });
+
+  const fetchTeams = async () => {
     try {
       const { data, error } = await supabase
         .from('team')
@@ -74,6 +77,26 @@ const AddAthleteForm = () => {
     }
   }, [open]);
 
+  const onAthleteAdded = () => {
+    setFormData({
+      student_id: "",
+      fname: "",
+      mname: "",
+      lname: "",
+      birthdate: "",
+      hometown: "",
+      email: "",
+      phone_number: "",
+      department: "",
+      course: "",
+      year_level: "",
+      block: "",
+      team_id: "",
+    });
+    setSelectedImageUrl("");
+    setOpen(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -96,7 +119,8 @@ const AddAthleteForm = () => {
         lname: formData.lname,
         birthdate: formData.birthdate || null,
         hometown: formData.hometown || null,
-        email: formData.email || null,        phone_number: formData.phone_number || null,
+        email: formData.email || null,
+        phone_number: formData.phone_number || null,
         department: formData.department || null,
         course: formData.course || null,
         year_level: formData.year_level ? parseInt(formData.year_level) : null,
@@ -115,27 +139,11 @@ const AddAthleteForm = () => {
         title: "Success",
         description: "Athlete added successfully.",
       });
-        // Reset form
-      setFormData({
-        student_id: "",
-        fname: "",
-        mname: "",
-        lname: "",
-        birthdate: "",
-        hometown: "",
-        email: "",
-        phone_number: "",
-        department: "",
-        course: "",
-        year_level: "",
-        block: "",
-        team_id: "",
-      });
-      setSelectedImageUrl("");
-      setOpen(false);
+
+      onAthleteAdded();
       
-      // Refresh the page to show new athlete
-      window.location.reload();
+      window.dispatchEvent(new CustomEvent('athleteAdded'));
+      
     } catch (error) {
       console.error("Error adding athlete:", error);
       toast({

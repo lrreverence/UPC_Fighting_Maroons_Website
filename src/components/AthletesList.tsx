@@ -340,6 +340,19 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
     });
   };
 
+  // Add event listener for athlete addition
+  useEffect(() => {
+    const handleAthleteAdded = () => {
+      fetchAthletes();
+    };
+
+    window.addEventListener('athleteAdded', handleAthleteAdded);
+
+    return () => {
+      window.removeEventListener('athleteAdded', handleAthleteAdded);
+    };
+  }, []);
+
   useEffect(() => {
     fetchAthletes();
   }, []);
