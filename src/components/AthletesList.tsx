@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -97,6 +98,8 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
   const [filterOption, setFilterOption] = useState<FilterOption>("all");
   const [editingStatId, setEditingStatId] = useState<string | null>(null);
   const [editingStatDescription, setEditingStatDescription] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [athleteToDelete, setAthleteToDelete] = useState<Athlete | null>(null);
   // Get unique filter options
   const getUniqueOptions = (field: keyof Athlete) => {
     const options = athletes
@@ -338,6 +341,43 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
       minute: '2-digit',
       hour12: true
     });
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, athlete: Athlete) => {
+    e.stopPropagation(); // Prevent triggering the card click
+    setAthleteToDelete(athlete);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!athleteToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('athlete')
+        .delete()
+        .eq('student_id', athleteToDelete.student_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Athlete deleted successfully.",
+      });
+
+      // Refresh the athletes list
+      fetchAthletes();
+    } catch (error) {
+      console.error("Error deleting athlete:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete athlete.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setAthleteToDelete(null);
+    }
   };
 
   // Add event listener for athlete addition
@@ -770,6 +810,29 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
         Showing {filteredAthletes.length} of {athletes.length} athletes
       </div>
 
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Athlete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {athleteToDelete ? formatName(athleteToDelete) : ''}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteConfirm}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Athletes List */}
       {filteredAthletes.length === 0 ? (
         <div className="text-center py-12">
@@ -803,15 +866,25 @@ const AthletesList = ({ onProfileViewChange }: AthletesListProps) => {
                       <p className="text-sm text-gray-600">ID: {athlete.student_id}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    {athlete.team_name && (
-                      <Badge variant="secondary" className="mb-1">
-                        {athlete.team_name}
-                      </Badge>
-                    )}
-                    <p className="text-sm text-gray-600">
-                      {athlete.course && athlete.year_level ? `${athlete.course} - Year ${athlete.year_level}` : athlete.course || ''}
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      {athlete.team_name && (
+                        <Badge variant="secondary" className="mb-1">
+                          {athlete.team_name}
+                        </Badge>
+                      )}
+                      <p className="text-sm text-gray-600">
+                        {athlete.course && athlete.year_level ? `${athlete.course} - Year ${athlete.year_level}` : athlete.course || ''}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={(e) => handleDeleteClick(e, athlete)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
