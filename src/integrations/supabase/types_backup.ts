@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -35,8 +36,9 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "team"
             referencedColumns: ["team_name"]
-          },        ]
-      },
+          },
+        ]
+      }
       athlete: {
         Row: {
           birthdate: string | null
@@ -49,11 +51,12 @@ export type Database = {
           image_url: string | null
           lname: string
           mname: string | null
-          phone_number: string | null          student_id: number;
+          phone_number: string | null
+          student_id: number;
           team_id: string | null;
           team_name: string | null;
           year_level: number | null
-        },
+        }
         Insert: {
           birthdate?: string | null
           block?: string | null
@@ -70,7 +73,7 @@ export type Database = {
           team_id?: string | null
           team_name?: string | null
           year_level?: number | null
-        },
+        }
         Update: {
           birthdate?: string | null
           block?: string | null
@@ -83,10 +86,11 @@ export type Database = {
           lname?: string
           mname?: string | null
           phone_number?: string | null
-          student_id?: number          team_id?: string | null
+          student_id?: number
+          team_id?: string | null
           team_name?: string | null
           year_level?: number | null
-        },
+        }
         Relationships: [
           {
             foreignKeyName: "athlete_team_name_fkey"
@@ -101,8 +105,9 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "team"
             referencedColumns: ["team_id"]
-          },        ]
-      },
+          },
+        ]
+      }
       game: {
         Row: {
           end_time: string | null
@@ -112,8 +117,9 @@ export type Database = {
           location: string | null
           opponent_team: string | null
           start_time: string
-          team_id: string | null          team_name: string | null
-        },
+          team_id: string | null;
+          team_name: string | null
+        }
         Insert: {
           end_time?: string | null
           game_date: string
@@ -122,8 +128,9 @@ export type Database = {
           location?: string | null
           opponent_team?: string | null
           start_time: string
-          team_id?: string | null          team_name?: string | null
-        },
+          team_id?: string | null;
+          team_name?: string | null
+        }
         Update: {
           end_time?: string | null
           game_date?: string
@@ -131,9 +138,10 @@ export type Database = {
           game_status?: string | null
           location?: string | null
           opponent_team?: string | null
-          start_time?: string          team_id?: string | null
+          start_time?: string;
+          team_id?: string | null
           team_name?: string | null
-        },
+        }
         Relationships: [
           {
             foreignKeyName: "game_team_name_fkey"
@@ -255,7 +263,8 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "team"
             referencedColumns: ["team_name"]
-          },        ]
+          },
+        ]
       }
       team: {
         Row: {

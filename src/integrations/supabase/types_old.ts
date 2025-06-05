@@ -8,7 +8,8 @@ export type Json =
 
 export type Database = {
   public: {
-    Tables: {      achievement: {
+    Tables: {      
+      achievement: {
         Row: {
           achievement_description: string | null
           team_id: string
@@ -34,8 +35,9 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "team"
             referencedColumns: ["team_id"]
-          },        ]
-      },
+          },        
+        ]
+      }
       athlete: {
         Row: {
           birthdate: string | null
@@ -92,8 +94,10 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "team"
             referencedColumns: ["team_id"]
-          },        ]
-      },      game: {
+          },        
+        ]
+      }      
+      game: {
         Row: {
           end_time: string | null
           game_date: string
@@ -195,10 +199,11 @@ export type Database = {
           excerpt?: string | null
           id?: string
           image?: string | null
-          reference_link?: string | null          title?: string
-        },
+          reference_link?: string | null;
+          title?: string
+        }
         Relationships: []
-      },
+      }
       stats: {
         Row: {
           events: number | null
@@ -237,8 +242,10 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "team"
             referencedColumns: ["team_id"]
-          },        ]
-      },      team: {
+          },        
+        ]
+      }      
+      team: {
         Row: {
           coach_name: string
           sport: string
