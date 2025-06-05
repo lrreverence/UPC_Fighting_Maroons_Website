@@ -135,9 +135,11 @@ const SportAthletes = () => {
                 <Card key={team.team_name} className="border-l-4 border-l-maroon">
                   <CardContent className="p-4">
                     <h3 className="font-bold text-lg mb-2">{team.team_name}</h3>
-                    <p className="text-gray-600">
-                      <strong>Coach:</strong> {team.coach_name}
-                    </p>
+                    {team.coach_name && (
+                      <p className="text-gray-600">
+                        <strong>Coach:</strong> {team.coach_name}
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               ))}

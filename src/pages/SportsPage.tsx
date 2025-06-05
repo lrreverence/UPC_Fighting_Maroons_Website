@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,7 +79,9 @@ const SportsPage = () => {
                         <h3 className="font-semibold text-[#7b1113]">
                           {team.team_name}
                         </h3>
-                        <p className="text-sm text-gray-600">Coach: {team.coach_name}</p>
+                        {team.coach_name && (
+                          <p className="text-sm text-gray-600">Coach: {team.coach_name}</p>
+                        )}
                       </div>
                     ))}
                   </div>

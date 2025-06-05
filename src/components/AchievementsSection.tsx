@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,19 +26,21 @@ const AchievementsSection = () => {
         .select(`
           *,
           team:team_id (
-            team_name,
-            team_display_name
+            team_name
           )
         `)
         .order('year', { ascending: false })
         .limit(4);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
       
       // Transform data to include team_name from the joined team table
       const transformedAchievements = data?.map((achievement: any) => ({
         ...achievement,
-        team_name: achievement.team?.team_display_name || achievement.team?.team_name || 'Unknown Team'
+        team_name: achievement.team?.team_name || 'Unknown Team'
       })) || [];
       
       setAchievements(transformedAchievements);
