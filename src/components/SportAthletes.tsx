@@ -39,15 +39,11 @@ const SportAthletes = () => {
 
   // Convert URL slug to display name
   const getSportDisplayName = (sportSlug: string) => {
-    const sportMap: { [key: string]: string } = {
-      'basketball': 'Basketball',
-      'volleyball': 'Volleyball',
-      'swimming': 'Swimming',
-      'track-and-field': 'Track and Field',
-      'football': 'Football',
-      'tennis': 'Tennis',
-    };
-    return sportMap[sportSlug] || sportSlug;
+    // Convert URL slug back to display name
+    return sportSlug
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   const fetchSportData = async () => {
@@ -59,7 +55,7 @@ const SportAthletes = () => {
       const sportName = getSportDisplayName(sport);
       
       // First, get teams for this sport
-      const { data: teamsData, error: teamsError } = await (supabase as any)
+      const { data: teamsData, error: teamsError } = await supabase
         .from('team')
         .select('*')
         .eq('sport', sportName);
@@ -67,17 +63,19 @@ const SportAthletes = () => {
       if (teamsError) throw teamsError;
       
       setTeams(teamsData || []);
-        if (teamsData && teamsData.length > 0) {
+      
+      if (teamsData && teamsData.length > 0) {
         // Get team IDs for this sport
         const teamIds = teamsData.map((team: Team) => team.team_id);
         
         // Then, get athletes for these teams with team names
-        const { data: athletesData, error: athletesError } = await (supabase as any)
+        const { data: athletesData, error: athletesError } = await supabase
           .from('athlete')
           .select(`
             *,
             team:team_id (
-              team_name
+              team_name,
+              sport
             )
           `)
           .in('team_id', teamIds)

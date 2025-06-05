@@ -55,6 +55,11 @@ const SportsPage = () => {
     return acc;
   }, {} as Record<string, Team[]>) || {};
 
+  // Convert sport name to URL slug
+  const getSportSlug = (sport: string) => {
+    return sport.toLowerCase().replace(/\s+/g, '-');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-6">
@@ -65,7 +70,7 @@ const SportsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {Object.entries(sportGroups).map(([sport, sportTeams]) => (
             <Card key={sport} className="hover:shadow-lg transition-shadow cursor-pointer group">
-              <Link to={`/sports/${sport.toLowerCase().replace(/\s+/g, '-')}`}>
+              <Link to={`/sports/${getSportSlug(sport)}`}>
                 <CardHeader className="bg-gradient-to-r from-[#7b1113] to-[#9b3133] text-white">
                   <CardTitle className="text-xl font-maroons-strong text-center group-hover:text-gold-light transition-colors">
                     {sport}
@@ -87,7 +92,6 @@ const SportsPage = () => {
                       </div>
                     ))}
                   </div>
-
                 </CardContent>
               </Link>
             </Card>
