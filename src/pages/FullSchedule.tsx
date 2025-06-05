@@ -46,6 +46,7 @@ import {
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import EditAthleteForm from "@/components/EditAthleteForm";
 
 interface Game {
   game_id: string;
@@ -119,12 +120,12 @@ const FullSchedule = () => {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [showGameDetails, setShowGameDetails] = useState(false);
   const [gameParticipants, setGameParticipants] = useState<GameParticipation[]>([]);
-  const [loadingGameDetails, setLoadingGameDetails] = useState(false);
-    // Athlete Profile States
+  const [loadingGameDetails, setLoadingGameDetails] = useState(false);  // Athlete Profile States
   const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null);
   const [showAthleteProfile, setShowAthleteProfile] = useState(false);
   const [athleteMatchHistory, setAthleteMatchHistory] = useState<any[]>([]);
   const [loadingAthleteHistory, setLoadingAthleteHistory] = useState(false);
+  const [showEditAthlete, setShowEditAthlete] = useState(false);
   
   const form = useForm<GameFormValues>({
     defaultValues: {
@@ -1702,8 +1703,7 @@ const FullSchedule = () => {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-6">
-              {/* Athlete Header */}
+            <div className="space-y-6">              {/* Athlete Header */}
               <div className="flex flex-col md:flex-row items-center gap-6 p-6 bg-gradient-to-r from-maroon to-maroon/80 text-white rounded-lg">
                 <Avatar className="h-32 w-32 ring-4 ring-white/20">
                   <AvatarImage 
@@ -1715,10 +1715,18 @@ const FullSchedule = () => {
                     <User className="h-16 w-16" />
                   </AvatarFallback>
                 </Avatar>
-                <div className="text-center md:text-left">
+                <div className="flex-1 text-center md:text-left">
                   <h1 className="text-3xl font-bold">{formatName(selectedAthlete)}</h1>
                   <p className="text-xl text-white/90 mt-2">Fighting Maroons Athlete</p>
                 </div>
+                <Button
+                  onClick={() => setShowEditAthlete(true)}
+                  variant="outline"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -1839,10 +1847,24 @@ const FullSchedule = () => {
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
+              </div>            </div>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Edit Athlete Form */}
+      {selectedAthlete && (
+        <EditAthleteForm
+          athlete={selectedAthlete}
+          open={showEditAthlete}
+          onOpenChange={setShowEditAthlete}
+          onAthleteUpdated={() => {
+            // Refresh athlete data if needed
+            if (selectedAthlete) {
+              fetchAthletes();
+            }
+          }}
+        />
       )}
     </div>
   );

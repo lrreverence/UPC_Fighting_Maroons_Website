@@ -13,6 +13,7 @@ import StatsPage from "./app/stats/page";
 import AchievementsPage from "./pages/Achievements";
 import SportPage from "./pages/SportPage";
 import SportsPage from "./pages/SportsPage";
+import TestEditButtons from "./pages/TestEditButtons";
 import Navbar from "./components/Navbar";
 import HomeNavbar from "./components/HomeNavbar";
 import Footer from "./components/Footer";
@@ -44,10 +45,10 @@ const AppContent = () => {
           <Route path="/athletes" element={<AllAthletes />} />
           <Route path="/sports" element={<SportsPage />} />
           <Route path="/schedule" element={<FullSchedule />} />
-          <Route path="/news" element={<NewsPage />} />
-          <Route path="/stats" element={<StatsPage />} />
+          <Route path="/news" element={<NewsPage />} />          <Route path="/stats" element={<StatsPage />} />
           <Route path="/achievements" element={<AchievementsPage />} />
           <Route path="/sports/:sport" element={<SportPage />} />
+          <Route path="/test-edit-buttons" element={<TestEditButtons />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

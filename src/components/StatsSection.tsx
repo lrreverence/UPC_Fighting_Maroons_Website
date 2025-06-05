@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import EditTeamStatsForm from "./EditTeamStatsForm";
 
 type Stat = {
   team_id: string;
@@ -21,6 +22,8 @@ type Stat = {
 const StatsSection = () => {
   const [stats, setStats] = useState<Stat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showEditStats, setShowEditStats] = useState(false);
+  const [selectedStat, setSelectedStat] = useState<Stat | null>(null);
   const fetchStats = async () => {
     try {
       setLoading(true);
@@ -55,9 +58,19 @@ const StatsSection = () => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchStats();
+
+    // Add event listener for team stats updates
+    const handleStatsUpdated = () => {
+      fetchStats();
+    };
+
+    window.addEventListener('teamStatsUpdated', handleStatsUpdated);
+
+    return () => {
+      window.removeEventListener('teamStatsUpdated', handleStatsUpdated);
+    };
   }, []);
 
   if (loading) {
@@ -84,12 +97,23 @@ const StatsSection = () => {
           <Button asChild variant="outline" className="border-forest text-forest hover:bg-forest hover:text-white font-maroons-strong">
             <Link to="/stats">View All Stats</Link>
           </Button>
-        </div>
-          <div className="font-maroons-strong grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        </div>        <div className="font-maroons-strong grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat) => (
-            <Card key={stat.team_id} className="stats-card hover:shadow-md transition-shadow">
+            <Card key={stat.team_id} className="stats-card hover:shadow-md transition-shadow relative">
               <CardContent className="p-6">
-                <h3 className="text-lg font-bold text-forest mb-4 font-maroons-strong">{stat.team_name}</h3>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => {
+                    setSelectedStat(stat);
+                    setShowEditStats(true);
+                  }}
+                  className="absolute top-2 right-2 h-8 w-8 text-gray-400 hover:text-blue-500 hover:bg-transparent"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span className="sr-only">Edit</span>
+                </Button>
+                <h3 className="text-lg font-bold text-forest mb-4 font-maroons-strong pr-8">{stat.team_name}</h3>
                 <div className="space-y-3 font-maroons-strong">
                   {stat.wins !== null && stat.losses !== null && (
                     <div className="flex justify-between font-maroons-strong">
@@ -119,11 +143,23 @@ const StatsSection = () => {
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </CardContent>            </Card>
           ))}
         </div>
       </div>
+
+      {/* Edit Team Stats Form */}
+      {selectedStat && (
+        <EditTeamStatsForm
+          teamStats={selectedStat}
+          open={showEditStats}
+          onOpenChange={setShowEditStats}
+          onStatsUpdated={() => {
+            fetchStats();
+            setSelectedStat(null);
+          }}
+        />
+      )}
     </section>
   );
 };

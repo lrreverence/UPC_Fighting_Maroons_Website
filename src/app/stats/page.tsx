@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { BarChart as BarChartIcon, Loader2, Plus, Trash2 } from "lucide-react";
+import { BarChart as BarChartIcon, Loader2, Plus, Trash2, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import EditTeamStatsForm from "@/components/EditTeamStatsForm";
 
 interface StatData {
   team_id: string;
@@ -34,12 +35,13 @@ interface Team {
   sport: string;
 }
 
-const StatsPage = () => {
-  const [stats, setStats] = useState<StatData[]>([]);
+const StatsPage = () => {  const [stats, setStats] = useState<StatData[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);  const [newStat, setNewStat] = useState({
+  const [open, setOpen] = useState(false);
+  const [showEditStats, setShowEditStats] = useState(false);
+  const [selectedStat, setSelectedStat] = useState<StatData | null>(null);const [newStat, setNewStat] = useState({
     team_id: "",
     wins: undefined,
     losses: undefined,
@@ -96,10 +98,20 @@ const StatsPage = () => {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     fetchTeams();
     fetchStats();
+
+    // Add event listener for team stats updates
+    const handleStatsUpdated = () => {
+      fetchStats();
+    };
+
+    window.addEventListener('teamStatsUpdated', handleStatsUpdated);
+
+    return () => {
+      window.removeEventListener('teamStatsUpdated', handleStatsUpdated);
+    };
   }, []);
 
   const handleAddStat = async (e: React.FormEvent) => {
@@ -352,20 +364,33 @@ const StatsPage = () => {
         </div>
       ) : stats.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stats.map((stat) => (
-            <Card key={stat.team_name} className="stats-card hover:shadow-md transition-shadow relative">
+          {stats.map((stat) => (            <Card key={stat.team_name} className="stats-card hover:shadow-md transition-shadow relative">
               <CardContent className="p-6">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => handleDeleteStat(stat.team_id)}
-                  className="absolute top-2 right-2 h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-transparent"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Delete</span>
-                </Button>
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => {
+                      setSelectedStat(stat);
+                      setShowEditStats(true);
+                    }}
+                    className="h-8 w-8 text-gray-400 hover:text-blue-500 hover:bg-transparent"
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span className="sr-only">Edit</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => handleDeleteStat(stat.team_id)}
+                    className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-transparent"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete</span>
+                  </Button>
+                </div>
                 
-                <h3 className="text-xl font-maroons-strong text-forest mb-4 pr-8">{stat.team_name}</h3>
+                <h3 className="text-xl font-maroons-strong text-forest mb-4 pr-16">{stat.team_name}</h3>
                 <div className="space-y-3">
                   {stat.wins !== null && stat.losses !== null && (
                     <div className="flex justify-between">
@@ -413,10 +438,20 @@ const StatsPage = () => {
             </Card>
           ))}
         </div>
-      ) : (
-        <div className="text-center py-8">
+      ) : (        <div className="text-center py-8">
           <p className="text-gray-500">No statistics available.</p>
         </div>
+      )}      {/* Edit Team Stats Form */}
+      {selectedStat && (
+        <EditTeamStatsForm
+          teamStats={selectedStat}
+          open={showEditStats}
+          onOpenChange={setShowEditStats}
+          onStatsUpdated={() => {
+            fetchStats();
+            setSelectedStat(null);
+          }}
+        />
       )}
     </div>
   );

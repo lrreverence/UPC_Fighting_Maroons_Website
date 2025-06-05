@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Search, Filter, Calendar, Edit, Trophy, X, User, ArrowLeft, SortAsc, SortDesc, ChevronDown, Mail, Phone, MapPin, GraduationCap, Hash, Building } from "lucide-react";
+import EditAthleteForm from "./EditAthleteForm";
 
 type Athlete = {
   student_id: number;
@@ -85,14 +86,14 @@ const AthletesList = () => {
   // Athlete Profile States
   const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null);
   const [showProfile, setShowProfile] = useState(false);
-  
-  // Match History States
+    // Match History States
   const [matchHistory, setMatchHistory] = useState<MatchHistory[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [filterOption, setFilterOption] = useState<FilterOption>("all");
   const [editingStatId, setEditingStatId] = useState<string | null>(null);
   const [editingStatDescription, setEditingStatDescription] = useState("");
+  const [showEditAthlete, setShowEditAthlete] = useState(false);
 
   // Get unique filter options
   const getUniqueOptions = (field: keyof Athlete) => {
@@ -316,7 +317,6 @@ const AthletesList = () => {
       hour12: true
     });
   };
-
   useEffect(() => {
     fetchAthletes();
   }, []);
@@ -324,6 +324,19 @@ const AthletesList = () => {
   useEffect(() => {
     applyFilters();
   }, [searchTerm, filters, athletes]);
+
+  // Add event listener for athlete updates
+  useEffect(() => {
+    const handleAthleteUpdated = () => {
+      fetchAthletes();
+    };
+
+    window.addEventListener('athleteUpdated', handleAthleteUpdated);
+
+    return () => {
+      window.removeEventListener('athleteUpdated', handleAthleteUpdated);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -353,25 +366,35 @@ const AthletesList = () => {
 
         {/* Athlete Profile */}
         <div className="max-w-4xl mx-auto">
-          <Card className="overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-maroon to-maroon/80 text-white">
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <Avatar className="h-32 w-32 ring-4 ring-white/20">
-                  <AvatarImage 
-                    src={selectedAthlete.image_url || ""} 
-                    alt={formatName(selectedAthlete)}
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="bg-white/20 text-white text-2xl">
-                    <User className="h-16 w-16" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="text-center md:text-left">
-                  <h1 className="text-3xl font-bold">{formatName(selectedAthlete)}</h1>
-                  {selectedAthlete.team_name && (
-                    <p className="text-xl text-white/90 mt-2">{selectedAthlete.team_name}</p>
-                  )}
+          <Card className="overflow-hidden">            <CardHeader className="bg-gradient-to-r from-maroon to-maroon/80 text-white">
+              <div className="flex justify-between items-start">
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <Avatar className="h-32 w-32 ring-4 ring-white/20">
+                    <AvatarImage 
+                      src={selectedAthlete.image_url || ""} 
+                      alt={formatName(selectedAthlete)}
+                      className="object-cover"
+                    />
+                    <AvatarFallback className="bg-white/20 text-white text-2xl">
+                      <User className="h-16 w-16" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-center md:text-left">
+                    <h1 className="text-3xl font-bold">{formatName(selectedAthlete)}</h1>
+                    {selectedAthlete.team_name && (
+                      <p className="text-xl text-white/90 mt-2">{selectedAthlete.team_name}</p>
+                    )}
+                  </div>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowEditAthlete(true)}
+                  className="text-white hover:bg-white/20 border-white/30"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
               </div>
             </CardHeader>
             
@@ -788,8 +811,19 @@ const AthletesList = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          ))}        </div>
+      )}
+      
+      {/* Edit Athlete Form */}
+      {selectedAthlete && (
+        <EditAthleteForm
+          athlete={selectedAthlete}
+          open={showEditAthlete}
+          onOpenChange={setShowEditAthlete}
+          onAthleteUpdated={() => {
+            fetchAthletes();
+          }}
+        />
       )}
     </div>
   );

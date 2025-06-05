@@ -5,9 +5,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Link } from "react-router-dom";
-import { Activity, ArrowLeft, User, Hash, Calendar, MapPin, Mail, Phone, GraduationCap, Building, Trophy } from "lucide-react";
+import { Activity, ArrowLeft, User, Hash, Calendar, MapPin, Mail, Phone, GraduationCap, Building, Trophy, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import EditAthleteForm from "./EditAthleteForm";
 
 type Athlete = {
   student_id: number;
@@ -46,10 +47,10 @@ const AthletesSection = () => {
   // Athlete Profile States
   const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null);
   const [showProfile, setShowProfile] = useState(false);
-  
-  // Match History States
+    // Match History States
   const [matchHistory, setMatchHistory] = useState<MatchHistory[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showEditAthlete, setShowEditAthlete] = useState(false);
   const fetchAthletes = async () => {
     try {
       setLoading(true);
@@ -164,9 +165,21 @@ const AthletesSection = () => {
       minute: '2-digit',
       hour12: true
     });
-  };
-  useEffect(() => {
+  };  useEffect(() => {
     fetchAthletes();
+  }, []);
+
+  // Add event listener for athlete updates
+  useEffect(() => {
+    const handleAthleteUpdated = () => {
+      fetchAthletes();
+    };
+
+    window.addEventListener('athleteUpdated', handleAthleteUpdated);
+
+    return () => {
+      window.removeEventListener('athleteUpdated', handleAthleteUpdated);
+    };
   }, []);
 
   if (loading) {
@@ -203,25 +216,35 @@ const AthletesSection = () => {
 
             {/* Athlete Profile */}
             <div className="max-w-4xl mx-auto">
-              <Card className="overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-maroon to-maroon/80 text-white">
-                  <div className="flex flex-col md:flex-row items-center gap-6">
-                    <Avatar className="h-32 w-32 ring-4 ring-white/20">
-                      <AvatarImage 
-                        src={selectedAthlete.image_url || ""} 
-                        alt={formatName(selectedAthlete)}
-                        className="object-cover"
-                      />
-                      <AvatarFallback className="bg-white/20 text-white text-2xl">
-                        <User className="h-16 w-16" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="text-center md:text-left">
-                      <h1 className="text-3xl font-bold font-maroons-strong">{formatName(selectedAthlete)}</h1>
-                      {selectedAthlete.team_name && (
-                        <p className="text-xl text-white/90 mt-2">{selectedAthlete.team_name}</p>
-                      )}
+              <Card className="overflow-hidden">                <CardHeader className="bg-gradient-to-r from-maroon to-maroon/80 text-white">
+                  <div className="flex justify-between items-start">
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                      <Avatar className="h-32 w-32 ring-4 ring-white/20">
+                        <AvatarImage 
+                          src={selectedAthlete.image_url || ""} 
+                          alt={formatName(selectedAthlete)}
+                          className="object-cover"
+                        />
+                        <AvatarFallback className="bg-white/20 text-white text-2xl">
+                          <User className="h-16 w-16" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="text-center md:text-left">
+                        <h1 className="text-3xl font-bold font-maroons-strong">{formatName(selectedAthlete)}</h1>
+                        {selectedAthlete.team_name && (
+                          <p className="text-xl text-white/90 mt-2">{selectedAthlete.team_name}</p>
+                        )}
+                      </div>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowEditAthlete(true)}
+                      className="text-white hover:bg-white/20 border-white/30"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
                   </div>
                 </CardHeader>
                 
@@ -442,9 +465,28 @@ const AthletesSection = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          ))}        </div>
       </div>
+        {/* Edit Athlete Form */}
+      {showEditAthlete && selectedAthlete && (
+        <EditAthleteForm
+          athlete={selectedAthlete}
+          open={showEditAthlete}
+          onOpenChange={setShowEditAthlete}
+          onAthleteUpdated={() => {
+            fetchAthletes();
+            // Refresh selected athlete data
+            if (selectedAthlete) {
+              fetchAthletes().then(() => {
+                const updatedAthlete = athletes.find(a => a.student_id === selectedAthlete.student_id);
+                if (updatedAthlete) {
+                  setSelectedAthlete(updatedAthlete);
+                }
+              });
+            }
+          }}
+        />
+      )}
     </section>
   );
 };
