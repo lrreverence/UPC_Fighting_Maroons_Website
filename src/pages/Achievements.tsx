@@ -43,6 +43,7 @@ export default function AchievementsPage() {
     achievement_description: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [originalAchievement, setOriginalAchievement] = useState<Achievement | null>(null);
 
   const fetchTeams = async () => {
     try {
@@ -128,6 +129,7 @@ export default function AchievementsPage() {
 
   const handleEditClick = (achievement: Achievement) => {
     setIsEditing(true);
+    setOriginalAchievement(achievement);
     setNewAchievement({
       team_id: achievement.team_id,
       title: achievement.title,
@@ -141,6 +143,7 @@ export default function AchievementsPage() {
     setOpen(false);
     setTimeout(() => {
       setIsEditing(false);
+      setOriginalAchievement(null);
       setNewAchievement({
         team_id: "",
         title: "",
@@ -164,7 +167,7 @@ export default function AchievementsPage() {
     setIsSubmitting(true);
     
     try {
-      if (isEditing) {
+      if (isEditing && originalAchievement) {
         // Update existing achievement
         const { error } = await supabase
           .from('achievement')
@@ -174,9 +177,9 @@ export default function AchievementsPage() {
             year: newAchievement.year,
             achievement_description: newAchievement.achievement_description || null
           })
-          .eq('team_id', newAchievement.team_id)
-          .eq('title', newAchievement.title)
-          .eq('year', newAchievement.year);
+          .eq('team_id', originalAchievement.team_id)
+          .eq('title', originalAchievement.title)
+          .eq('year', originalAchievement.year);
 
         if (error) throw error;
 
@@ -278,6 +281,7 @@ export default function AchievementsPage() {
                     onChange={(e) => setNewAchievement({...newAchievement, title: e.target.value})}
                     placeholder="Achievement title" 
                     required
+                    disabled={isEditing}
                   />
                 </div>
                 
@@ -290,6 +294,7 @@ export default function AchievementsPage() {
                     onChange={(e) => setNewAchievement({...newAchievement, year: parseInt(e.target.value)})}
                     placeholder="2024" 
                     required
+                    disabled={isEditing}
                   />
                 </div>
                 
