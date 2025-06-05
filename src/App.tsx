@@ -12,6 +12,7 @@ import NewsPage from "./app/news/page";
 import StatsPage from "./app/stats/page";
 import AchievementsPage from "./pages/Achievements";
 import SportPage from "./pages/SportPage";
+import SportsPage from "./pages/SportsPage";
 import Navbar from "./components/Navbar";
 import HomeNavbar from "./components/HomeNavbar";
 import Footer from "./components/Footer";
@@ -29,6 +30,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/athletes" element={<AllAthletes />} />
+          <Route path="/sports" element={<SportsPage />} />
           <Route path="/schedule" element={<FullSchedule />} />
           <Route path="/news" element={<NewsPage />} />
           <Route path="/stats" element={<StatsPage />} />
