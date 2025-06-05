@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { BarChart as BarChartIcon, Loader2, Plus, Trash2 } from "lucide-react";
+import { BarChart as BarChartIcon, Loader2, Plus, Trash2, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,9 @@ const StatsPage = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);  const [newStat, setNewStat] = useState({
+  const [open, setOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [newStat, setNewStat] = useState({
     team_id: "",
     wins: undefined,
     losses: undefined,
@@ -117,13 +119,13 @@ const StatsPage = () => {
     try {
       const statToSubmit = {
         team_id: newStat.team_id,
-        wins: newStat.wins,
-        losses: newStat.losses,
-        points: newStat.points,
-        medals: newStat.medals,
-        records: newStat.records,
-        events: newStat.events,
-        top_performer: newStat.top_performer || null
+        wins: newStat.wins === undefined ? null : newStat.wins,
+        losses: newStat.losses === undefined ? null : newStat.losses,
+        points: newStat.points === undefined ? null : newStat.points,
+        medals: newStat.medals === undefined ? null : newStat.medals,
+        records: newStat.records === undefined ? null : newStat.records,
+        events: newStat.events === undefined ? null : newStat.events,
+        top_performer: newStat.top_performer === "" ? null : newStat.top_performer
       };
 
       // Check if stats already exist for this team
@@ -207,6 +209,38 @@ const StatsPage = () => {
     }
   };
 
+  const handleEditClick = (stat: StatData) => {
+    setIsEditing(true);
+    setNewStat({
+      team_id: stat.team_id,
+      wins: stat.wins ?? undefined,
+      losses: stat.losses ?? undefined,
+      points: stat.points ?? undefined,
+      medals: stat.medals ?? undefined,
+      records: stat.records ?? undefined,
+      events: stat.events ?? undefined,
+      top_performer: stat.top_performer ?? ""
+    });
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setTimeout(() => {
+      setIsEditing(false);
+      setNewStat({
+        team_id: "",
+        wins: undefined,
+        losses: undefined,
+        points: undefined,
+        medals: undefined,
+        records: undefined,
+        events: undefined,
+        top_performer: ""
+      });
+    }, 100);
+  };
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex items-center justify-between mb-10">
@@ -215,19 +249,41 @@ const StatsPage = () => {
           <h1 className="text-3xl font-maroons-strong text-forest">Team Statistics</h1>
         </div>
 
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-forest hover:bg-forest-dark">
-              <Plus className="mr-2 h-4 w-4" /> Add Stat
-            </Button>
-          </DialogTrigger>
+        <Button 
+          className="bg-forest hover:bg-forest-dark"
+          onClick={() => {
+            setIsEditing(false);
+            setNewStat({
+              team_id: "",
+              wins: undefined,
+              losses: undefined,
+              points: undefined,
+              medals: undefined,
+              records: undefined,
+              events: undefined,
+              top_performer: ""
+            });
+            setOpen(true);
+          }}
+        >
+          <Plus className="mr-2 h-4 w-4" /> Add Stat
+        </Button>
+
+        <Dialog open={open} onOpenChange={handleClose}>
           <DialogContent className="sm:max-w-[450px]">
             <DialogHeader>
-              <DialogTitle className="text-xl">Add New Statistic</DialogTitle>
+              <DialogTitle className="text-xl">
+                {isEditing ? "Edit Statistics" : "Add New Statistic"}
+              </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleAddStat} className="space-y-4">              <div className="grid gap-2">
+            <form onSubmit={handleAddStat} className="space-y-4">
+              <div className="grid gap-2">
                 <Label htmlFor="team_id">Team</Label>
-                <Select value={newStat.team_id} onValueChange={(value) => setNewStat({ ...newStat, team_id: value })}>
+                <Select 
+                  value={newStat.team_id} 
+                  onValueChange={(value) => setNewStat({ ...newStat, team_id: value })}
+                  disabled={isEditing}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a team" />
                   </SelectTrigger>
@@ -329,7 +385,7 @@ const StatsPage = () => {
                   className="bg-forest hover:bg-forest-dark"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Adding..." : "Add Stat"}
+                  {isSubmitting ? "Saving..." : isEditing ? "Save Changes" : "Add Stat"}
                 </Button>
               </div>
             </form>
@@ -351,21 +407,31 @@ const StatsPage = () => {
           ))}
         </div>
       ) : stats.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {stats.map((stat) => (
-            <Card key={stat.team_name} className="stats-card hover:shadow-md transition-shadow relative">
-              <CardContent className="p-6">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => handleDeleteStat(stat.team_id)}
-                  className="absolute top-2 right-2 h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-transparent"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Delete</span>
-                </Button>
-                
-                <h3 className="text-xl font-maroons-strong text-forest mb-4 pr-8">{stat.team_name}</h3>
+            <Card key={stat.team_id} className="relative h-full">
+              <CardContent className="p-6 h-full">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-bold text-forest font-maroons-strong">{stat.team_name}</h3>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditClick(stat)}
+                      className="text-forest hover:text-forest-dark"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteStat(stat.team_id)}
+                      className="text-gray-400 hover:text-red-500"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
                 <div className="space-y-3">
                   {stat.wins !== null && stat.losses !== null && (
                     <div className="flex justify-between">
