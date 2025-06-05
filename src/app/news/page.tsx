@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import ImageUpload from "@/components/ImageUpload";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type NewsItem = {
   id: string;
@@ -298,8 +299,20 @@ export default function NewsPage() {
           </div>
           
           {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="h-8 w-8 border-4 border-maroon border-t-transparent rounded-full animate-spin"></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <Card key={i}>
+                  <Skeleton className="h-48 w-full mb-4" />
+                  <CardContent>
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-2" />
+                    <Skeleton className="h-4 w-1/3" />
+                  </CardContent>
+                  <CardFooter>
+                    <Skeleton className="h-8 w-24" />
+                  </CardFooter>
+                </Card>
+              ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
