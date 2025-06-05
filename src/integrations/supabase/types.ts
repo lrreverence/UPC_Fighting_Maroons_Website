@@ -212,7 +212,7 @@ export type Database = {
           points: number | null
           records: number | null
           team_id: string
-          top_performer: string
+          top_performer: string | null
           wins: number | null
         }
         Insert: {
@@ -222,7 +222,7 @@ export type Database = {
           points?: number | null
           records?: number | null
           team_id: string
-          top_performer: string
+          top_performer?: string | null
           wins?: number | null
         }
         Update: {
@@ -232,7 +232,7 @@ export type Database = {
           points?: number | null
           records?: number | null
           team_id?: string
-          top_performer?: string
+          top_performer?: string | null
           wins?: number | null
         }
         Relationships: [
